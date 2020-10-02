@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 namespace aavm {
 
@@ -17,7 +18,7 @@ constexpr std::uint8_t alnum_mask = 1 << 4;
 constexpr std::uint8_t xdigit_mask = 1 << 5;
 constexpr std::uint8_t punct_mask = 1 << 6;
 constexpr std::uint8_t space_mask = 1 << 7;
-constexpr auto ASCII_MAX = 0x80;
+constexpr auto ASCII_MAX = std::numeric_limits<char>::max();
 
 constexpr auto gen_charcat_table() {
   std::array<std::uint8_t, ASCII_MAX> table{};
@@ -37,7 +38,7 @@ constexpr auto gen_charcat_table() {
    *          >digit
    */
 
-  for (auto c = '\0'; c < ASCII_MAX; ++c) {
+  for (auto c = 0; c < ASCII_MAX; ++c) {
     if ((c >= 0x09 && c <= 0x0D) || c == 0x20) {
       table[c] |= space_mask;
     }
@@ -124,7 +125,7 @@ namespace detail {
 constexpr auto gen_lowerconv_table() {
   std::array<char, ASCII_MAX> table{};
 
-  for (auto c = '\0'; c < ASCII_MAX; ++c) {
+  for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_uppercase(c)) {
       table[c] = c - 0x41 + 0x61;
     } else {
@@ -138,7 +139,7 @@ constexpr auto gen_lowerconv_table() {
 constexpr auto gen_upperconv_table() {
   std::array<char, ASCII_MAX> table{};
 
-  for (auto c = '\0'; c < ASCII_MAX; ++c) {
+  for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_lowercase(c)) {
       table[c] = c - 0x61 + 0x41;
     } else {
@@ -152,7 +153,7 @@ constexpr auto gen_upperconv_table() {
 constexpr auto gen_ctoiconv_table() {
   std::array<int, ASCII_MAX> table{};
 
-  for (auto c = '\0'; c < ASCII_MAX; ++c) {
+  for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_xdigit(c)) {
       if (is_lowercase(c)) {
         table[c] = static_cast<int>(c - 0x61 + 0xA);
