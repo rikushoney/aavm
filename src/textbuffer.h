@@ -20,14 +20,12 @@ auto vector_from_stream(Istream &stream) {
 
   std::vector<char_type> vec{};
   std::array<char_type, Chunksize> buffer{};
-
-  std::size_t chars_read{};
+  const auto chars_start = buffer.begin();
 
   while (stream) {
     stream.read(buffer.data(), buffer.size());
-    chars_read = stream.gcount();
-    vec.insert(vec.end(), buffer.begin(),
-               std::next(buffer.begin(), chars_read));
+    const auto chars_end = std::next(chars_start, stream.gcount());
+    vec.insert(vec.end(), chars_start, chars_end);
   }
 
   return vec;
@@ -36,28 +34,43 @@ auto vector_from_stream(Istream &stream) {
 } // namespace detail
 
 template <typename CharT> class Textbuffer {
-  static constexpr std::size_t CHUNK_SIZE = 0x1000 * sizeof(CharT);
+private:
+  static constexpr size_t CHUNK_SIZE = 0x1000 * sizeof(CharT);
 
 public:
   using char_type = CharT;
   using size_type = std::size_t;
+  using buffer_type = std::vector<char_type>;
+  using iterator = typename buffer_type::const_iterator;
 
   Textbuffer() = delete;
 
+  Textbuffer(Textbuffer &&buffer)
+      : internal_buffer_{std::move(buffer.internal_buffer_)} {}
+
+  auto operator=(Textbuffer &&buffer) -> Textbuffer & {
+    internal_buffer_ = std::move(buffer.internal_buffer_);
+    return *this;
+  }
+
   template <typename Istream>
   Textbuffer(Istream &stream)
-      : _internal_buffer{detail::vector_from_stream<CHUNK_SIZE>(stream)} {
+      : internal_buffer_{detail::vector_from_stream<CHUNK_SIZE>(stream)} {
     static_assert(sizeof(char_type) == sizeof(typename Istream::char_type));
   }
 
-  template <typename Ostream> const void dump(Ostream &stream) const {
+  template <typename Ostream> auto dump(Ostream &stream) const {
     static_assert(sizeof(char_type) == sizeof(typename Ostream::char_type));
+    stream.write(internal_buffer_.data(), internal_buffer_.size());
+  }
 
-    stream.write(_internal_buffer.data(), _internal_buffer.size());
+  auto view(iterator first, iterator last) const
+      -> std::basic_string_view<char_type> {
+    return {&(*first), static_cast<size_type>(last - first)};
   }
 
 private:
-  std::vector<char_type> _internal_buffer;
+  buffer_type internal_buffer_;
 };
 
 using Charbuffer = Textbuffer<char>;
