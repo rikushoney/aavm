@@ -11,8 +11,8 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  std::fstream filestream{argv[1], std::ios_base::in};
-  Charbuffer buffer{filestream};
+  auto filestream = std::fstream{argv[1], std::ios_base::in};
+  auto buffer = Charbuffer{filestream};
   buffer.dump(std::cout);
   std::cout << "\n";
 

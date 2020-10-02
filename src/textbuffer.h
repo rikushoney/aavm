@@ -59,6 +59,10 @@ public:
     static_assert(sizeof(char_type) == sizeof(typename Istream::char_type));
   }
 
+  auto begin() const { return internal_buffer_.begin(); }
+
+  auto end() const { return internal_buffer_.end(); }
+
   template <typename Ostream> auto dump(Ostream &stream) const {
     static_assert(sizeof(char_type) == sizeof(typename Ostream::char_type));
     stream.write(internal_buffer_.data(), internal_buffer_.size());
