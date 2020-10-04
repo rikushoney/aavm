@@ -18,8 +18,8 @@ template <std::size_t Chunksize, typename Istream>
 auto vector_from_stream(Istream &stream) {
   using char_type = typename Istream::char_type;
 
-  std::vector<char_type> vec{};
-  std::array<char_type, Chunksize> buffer{};
+  auto vec = std::vector<char_type>{};
+  auto buffer = std::array<char_type, Chunksize>{};
   const auto chars_start = buffer.begin();
 
   while (stream) {
@@ -35,7 +35,8 @@ auto vector_from_stream(Istream &stream) {
 
 template <typename CharT> class Textbuffer {
 private:
-  static constexpr size_t CHUNK_SIZE = 0x1000 * sizeof(CharT);
+  // 4K buffer sizes (times size of character)
+  static constexpr size_t CHUNK_SIZE = 0x1000;
 
 public:
   using char_type = CharT;

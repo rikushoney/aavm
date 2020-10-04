@@ -60,7 +60,7 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
     std::cout << "Period\n";
     break;
   default:
-    std::cout << "Unknown!\n";
+    std::cout << lex.string_value() << "\n";
     break;
   }
 

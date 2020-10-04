@@ -1,10 +1,13 @@
 #ifndef AAVM_CHARACTER_H
 #define AAVM_CHARACTER_H
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string>
+#include <string_view>
 
 namespace aavm {
 
@@ -181,6 +184,30 @@ constexpr auto to_lower(char c) { return detail::lowercaseconv[c]; }
 constexpr auto to_upper(char c) { return detail::uppercaseconv[c]; }
 
 constexpr auto ctoi(char c) { return detail::ctoiconv[c]; }
+
+inline auto to_lower(std::string_view str) -> std::string {
+  auto result = std::string{str};
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](char c) { return to_lower(c); });
+  return result;
+}
+
+inline auto to_upper(std::string_view str) -> std::string {
+  auto result = std::string{str};
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](char c) { return to_upper(c); });
+  return result;
+}
+
+constexpr auto starts_with(std::string_view str, std::string_view prefix) {
+  return str.substr(0, prefix.length()) == prefix;
+}
+
+constexpr auto ends_with(std::string_view str, std::string_view suffix) {
+  return str.length() >= suffix.length() &&
+         str.compare(str.length() - suffix.length(), std::string_view::npos,
+                     suffix) == 0;
+}
 
 } // namespace aavm
 

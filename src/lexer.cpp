@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include "character.h"
+#include "keyword_map.h"
 
 #include <iterator>
 
@@ -20,6 +21,16 @@ void Lexer::lex_identifier(token::Kind &tok) {
   }
 
   string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
+
+  const auto it = keyword::find([str = to_lower(string_value_)](auto kw) {
+    return starts_with(str, kw);
+  });
+
+  if (it != keyword::none) {
+    tok = it->second;
+    return;
+  }
+
   tok = token::Label;
 }
 
