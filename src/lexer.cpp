@@ -8,10 +8,9 @@ using namespace aavm::parser;
 
 Lexer::Lexer(Charbuffer &buffer)
     : buffer_{buffer}, buffer_cursor_{buffer_.begin()} {
+  // prime the first character
   next_char();
 }
-
-char Lexer::next_char() { return cur_char_ = *buffer_cursor_++; }
 
 void Lexer::lex_identifier(token::Kind &tok) {
   const auto tok_start = std::prev(buffer_cursor_);
@@ -21,17 +20,39 @@ void Lexer::lex_identifier(token::Kind &tok) {
   }
 
   string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
+  // it will become apparent why we copy this later
+  const auto label_name = string_value_;
 
-  const auto it = keyword::find([str = to_lower(string_value_)](auto kw) {
+  const auto kw = keyword::find([str = to_lower(string_value_)](auto kw) {
     return starts_with(str, kw);
   });
 
-  if (it != keyword::none) {
-    tok = it->second;
+  if (kw == keyword::none) {
+    tok = token::Label;
     return;
   }
 
-  tok = token::Label;
+  tok = kw->second;
+
+  // check for the optional 'S'
+  string_value_.remove_prefix(kw->first.length());
+  if (to_lower(string_value_.front()) == 's') {
+    token_queue_.emplace(token::S);
+    string_value_.remove_prefix(1);
+  }
+
+  const auto cond = keyword::find(
+      [str = to_lower(string_value_)](auto kw) { return str == kw; });
+
+  if (cond != keyword::none) {
+    token_queue_.emplace(cond->second);
+    string_value_.remove_prefix(cond->first.length());
+  }
+
+  if (!string_value_.empty()) {
+    string_value_ = label_name;
+    tok = token::Label;
+  }
 }
 
 void Lexer::lex_integer(token::Kind &tok) {
@@ -78,8 +99,12 @@ void Lexer::lex_integer(token::Kind &tok) {
   tok = token::Integer;
 }
 
-token::Kind Lexer::lex_token() {
-  token::Kind tok{};
+void Lexer::lex_token(token::Kind &tok) {
+  if (!token_queue_.empty()) {
+    tok = token_queue_.front();
+    token_queue_.pop();
+    return;
+  }
 
   while (buffer_cursor_ != buffer_.end()) {
     switch (cur_char_) {
@@ -133,22 +158,22 @@ token::Kind Lexer::lex_token() {
     default:
       if (is_alpha(cur_char_)) {
         lex_identifier(tok);
-        return tok;
+        return;
       }
 
       if (is_digit(cur_char_)) {
         lex_integer(tok);
-        return tok;
+        return;
       }
 
       // invalid character!
       tok = token::Error;
-      return tok;
+      return;
     }
 
     next_char();
-    return tok;
+    return;
   }
 
-  return token::Eof;
+  tok = token::Eof;
 }

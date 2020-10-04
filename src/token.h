@@ -24,6 +24,8 @@ enum Kind {
   Colon,     // :
   Period,    // .
 
+  S, // optional suffix to update condition flags
+
   // condition codes
   COND_eq,
   COND_ne,
@@ -151,7 +153,7 @@ enum Kind {
   OP_stmda,
   OP_stmdb,
   OP_push,
-  OP_pop
+  OP_pop,
 };
 
 }

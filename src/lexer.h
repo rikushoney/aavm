@@ -5,6 +5,8 @@
 #include "token.h"
 
 #include <cstdint>
+#include <optional>
+#include <queue>
 #include <string>
 #include <string_view>
 
@@ -12,16 +14,30 @@ namespace aavm::parser {
 
 class Lexer {
 public:
+  using string_type = std::string_view;
+  using int_type = std::int32_t;
+
   Lexer(Charbuffer &buffer);
 
-  token::Kind lex_token();
+  auto get_token() {
+    lex_token(kind_);
+    return kind_;
+  }
 
-  auto string_value() const { return string_value_; }
-  auto int_value() const { return int_value_; }
+  auto string_value() -> std::optional<string_type> const {
+    return kind_ == token::Label ? std::make_optional(string_value_)
+                                 : std::nullopt;
+  }
+
+  auto int_value() -> std::optional<int_type> const {
+    return kind_ == token::Integer ? std::make_optional(int_value_)
+                                   : std::nullopt;
+  }
 
 private:
-  char next_char();
+  auto next_char() { return cur_char_ = *buffer_cursor_++; }
 
+  void lex_token(token::Kind &tok);
   void lex_identifier(token::Kind &tok);
   void lex_integer(token::Kind &tok);
 
@@ -29,8 +45,11 @@ private:
   Charbuffer::iterator buffer_cursor_;
   char cur_char_;
 
-  std::string_view string_value_;
-  std::int32_t int_value_;
+  token::Kind kind_;
+  string_type string_value_;
+  int_type int_value_;
+
+  std::queue<token::Kind> token_queue_;
 };
 
 } // namespace aavm::parser

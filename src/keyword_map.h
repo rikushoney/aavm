@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -117,6 +118,16 @@ template <typename Pred> constexpr auto find(Pred &&pred) {
   }
 
   return none;
+}
+
+constexpr auto to_string(token::Kind tok) -> std::optional<std::string_view> {
+  for (auto it = detail::keyword_map.begin(); it != none; ++it) {
+    if (it->second == tok) {
+      return std::make_optional(it->first);
+    }
+  }
+
+  return std::nullopt;
 }
 
 } // namespace aavm::parser::keyword

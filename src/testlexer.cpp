@@ -1,3 +1,4 @@
+#include "keyword_map.h"
 #include "lexer.h"
 #include "textbuffer.h"
 #include "token.h"
@@ -8,7 +9,7 @@
 using namespace aavm;
 
 parser::token::Kind dump_token(parser::Lexer &lex) {
-  parser::token::Kind tok{lex.lex_token()};
+  parser::token::Kind tok{lex.get_token()};
 
   switch (tok) {
   case parser::token::Error:
@@ -21,10 +22,10 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
     std::cout << "Newline\n";
     break;
   case parser::token::Label:
-    std::cout << "Label \"" << lex.string_value() << "\"\n";
+    std::cout << "Label \"" << lex.string_value().value() << "\"\n";
     break;
   case parser::token::Integer:
-    std::cout << "Integer " << lex.int_value() << "\n";
+    std::cout << "Integer " << lex.int_value().value() << "\n";
     break;
   case parser::token::Comma:
     std::cout << "Comma\n";
@@ -59,8 +60,17 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
   case parser::token::Period:
     std::cout << "Period\n";
     break;
+  case parser::token::S:
+    std::cout << "S\n";
+    break;
   default:
-    std::cout << lex.string_value() << "\n";
+    const auto str = parser::keyword::to_string(tok);
+    if (str) {
+      std::cout << str.value() << "\n";
+    } else {
+      std::cout << "Invalid token " << tok << "\n";
+    }
+
     break;
   }
 
