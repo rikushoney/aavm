@@ -17,7 +17,7 @@ public:
   using string_type = std::string_view;
   using int_type = std::int32_t;
 
-  Lexer(Charbuffer &buffer);
+  Lexer(const Charbuffer &buffer);
 
   auto get_token() {
     lex_token(kind_);
@@ -41,7 +41,7 @@ private:
   void lex_identifier(token::Kind &tok);
   void lex_integer(token::Kind &tok);
 
-  Charbuffer &buffer_;
+  const Charbuffer &buffer_;
   Charbuffer::iterator buffer_cursor_;
   char cur_char_;
 

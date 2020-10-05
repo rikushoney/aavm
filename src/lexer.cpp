@@ -6,7 +6,7 @@
 
 using namespace aavm::parser;
 
-Lexer::Lexer(Charbuffer &buffer)
+Lexer::Lexer(const Charbuffer &buffer)
     : buffer_{buffer}, buffer_cursor_{buffer_.begin()} {
   // prime the first character
   next_char();
@@ -78,7 +78,7 @@ void Lexer::lex_integer(token::Kind &tok) {
   }
 
   while (is_xdigit(cur_char_)) {
-    auto val = ctoi(cur_char_);
+    const auto val = ctoi(cur_char_);
 
     if (val >= radix) {
       // invalid digit!

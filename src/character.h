@@ -21,7 +21,7 @@ constexpr std::uint8_t alnum_mask = 1 << 4;
 constexpr std::uint8_t xdigit_mask = 1 << 5;
 constexpr std::uint8_t punct_mask = 1 << 6;
 constexpr std::uint8_t space_mask = 1 << 7;
-constexpr auto ASCII_MAX = std::numeric_limits<char>::max();
+constexpr auto ASCII_MAX{std::numeric_limits<char>::max() + 1};
 
 constexpr auto gen_charcat_table() {
   std::array<std::uint8_t, ASCII_MAX> table{};

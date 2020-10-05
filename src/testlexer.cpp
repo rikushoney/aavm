@@ -9,7 +9,7 @@
 using namespace aavm;
 
 parser::token::Kind dump_token(parser::Lexer &lex) {
-  parser::token::Kind tok{lex.get_token()};
+  const auto tok{lex.get_token()};
 
   switch (tok) {
   case parser::token::Error:
@@ -84,10 +84,10 @@ int main(int argc, char **argv) {
   }
 
   auto filestream = std::fstream{argv[1], std::ios_base::in};
-  auto buffer = Charbuffer{filestream};
+  const auto buffer = Charbuffer{filestream};
   auto lexer = parser::Lexer{buffer};
 
-  parser::token::Kind tok{};
+  auto tok = parser::token::Kind{};
   do {
     tok = dump_token(lexer);
 

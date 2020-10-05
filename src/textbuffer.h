@@ -35,8 +35,8 @@ auto vector_from_stream(Istream &stream) {
 
 template <typename CharT> class Textbuffer {
 private:
-  // 4K buffer sizes (times size of character)
-  static constexpr size_t CHUNK_SIZE = 0x1000;
+  // 4K buffer size
+  static constexpr auto CHUNK_SIZE{0x1000};
 
 public:
   using char_type = CharT;

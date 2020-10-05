@@ -52,7 +52,7 @@ constexpr auto gen_keyword_map() {
 
        {"mul"sv, token::OP_mul},     {"mla"sv, token::OP_mla},
        {"mls"sv, token::OP_mls},     {"umull"sv, token::OP_umull},
-       {"umlal"sv, token::OP_smull}, {"smull"sv, token::OP_smull},
+       {"umlal"sv, token::OP_umlal}, {"smull"sv, token::OP_smull},
        {"smlal"sv, token::OP_smlal},
 
        {"sdiv"sv, token::OP_sdiv},   {"udiv"sv, token::OP_udiv},
@@ -94,7 +94,7 @@ constexpr auto gen_keyword_map() {
        {"push"sv, token::OP_push},   {"pop"sv, token::OP_pop}});
 }
 
-constexpr auto keyword_map{detail::gen_keyword_map()};
+constexpr auto keyword_map{gen_keyword_map()};
 
 } // namespace detail
 
