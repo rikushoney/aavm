@@ -33,10 +33,10 @@ example workflow could be:
 
    * ``cmake --build .``
 
-3. If compilation succeeded the resulting binaries should be present in the bin
-directory
+3. If compilation succeeded the resulting binaries should be present in the
+``bin`` directory
 
 ## License
 
-Unless stated otherwise, all source code is licensed under the permissive MIT  
+Unless stated otherwise, all source code is licensed under the permissive MIT
 license. See the [LICENSE](LICENSE.txt) file for more information.
