@@ -24,12 +24,12 @@ public:
     return kind_;
   }
 
-  auto string_value() -> std::optional<string_type> const {
+  auto string_value() const {
     return kind_ == token::Label ? std::make_optional(string_value_)
                                  : std::nullopt;
   }
 
-  auto int_value() -> std::optional<int_type> const {
+  auto int_value() const {
     return kind_ == token::Integer ? std::make_optional(int_value_)
                                    : std::nullopt;
   }
