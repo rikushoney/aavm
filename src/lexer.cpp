@@ -33,11 +33,11 @@ void Lexer::lex_identifier(token::Kind &tok) {
   }
 
   tok = kw->second;
+  string_value_.remove_prefix(kw->first.length());
 
   // check for the optional 'S'
-  string_value_.remove_prefix(kw->first.length());
   if (to_lower(string_value_.front()) == 's') {
-    token_queue_.emplace(token::S);
+    token_queue_.push(token::S);
     string_value_.remove_prefix(1);
   }
 
@@ -45,7 +45,7 @@ void Lexer::lex_identifier(token::Kind &tok) {
       [str = to_lower(string_value_)](auto kw) { return str == kw; });
 
   if (cond != keyword::none) {
-    token_queue_.emplace(cond->second);
+    token_queue_.push(cond->second);
     string_value_.remove_prefix(cond->first.length());
   }
 

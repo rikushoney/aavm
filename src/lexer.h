@@ -24,6 +24,8 @@ public:
     return kind_;
   }
 
+  auto token_kind() const { return kind_; }
+
   auto string_value() const {
     return kind_ == token::Label ? std::make_optional(string_value_)
                                  : std::nullopt;

@@ -24,7 +24,7 @@ constexpr std::uint8_t space_mask = 1 << 7;
 constexpr auto ASCII_MAX{std::numeric_limits<char>::max() + 1};
 
 constexpr auto gen_charcat_table() {
-  std::array<std::uint8_t, ASCII_MAX> table{};
+  auto table = std::array<std::uint8_t, ASCII_MAX>{};
 
   // byte layout:
   /*
@@ -126,7 +126,7 @@ constexpr auto is_space(char c) {
 namespace detail {
 
 constexpr auto gen_lowerconv_table() {
-  std::array<char, ASCII_MAX> table{};
+  auto table = std::array<char, ASCII_MAX>{};
 
   for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_uppercase(c)) {
@@ -140,7 +140,7 @@ constexpr auto gen_lowerconv_table() {
 }
 
 constexpr auto gen_upperconv_table() {
-  std::array<char, ASCII_MAX> table{};
+  auto table = std::array<char, ASCII_MAX>{};
 
   for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_lowercase(c)) {
@@ -154,7 +154,7 @@ constexpr auto gen_upperconv_table() {
 }
 
 constexpr auto gen_ctoiconv_table() {
-  std::array<int, ASCII_MAX> table{};
+  auto table = std::array<int, ASCII_MAX>{};
 
   for (auto c = 0; c < ASCII_MAX; ++c) {
     if (is_xdigit(c)) {
