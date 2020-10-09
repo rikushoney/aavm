@@ -154,6 +154,12 @@ enum Kind {
   OP_stmdb,
   OP_push,
   OP_pop,
+
+  // directives
+  DIR_dcb,
+  DIR_equ,
+  DIR_space,
+  DIR_fill
 };
 
 }
