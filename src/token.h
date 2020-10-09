@@ -27,6 +27,7 @@ enum Kind {
   S, // optional suffix to update condition flags
 
   // condition codes
+  COND_START,
   COND_eq,
   COND_ne,
   COND_cs,
@@ -42,8 +43,10 @@ enum Kind {
   COND_gt,
   COND_le,
   COND_al,
+  COND_END,
 
   // registers
+  REG_START,
   REG_r0,
   REG_r1,
   REG_r2,
@@ -60,9 +63,11 @@ enum Kind {
   REG_sp,
   REG_lr,
   REG_pc,
+  REG_END,
 
   // instructions
   // add
+  OP_START,
   OP_add,
   OP_adc,
 
@@ -154,12 +159,15 @@ enum Kind {
   OP_stmdb,
   OP_push,
   OP_pop,
+  OP_END,
 
   // directives
+  DIR_START,
   DIR_dcb,
   DIR_equ,
   DIR_space,
-  DIR_fill
+  DIR_fill,
+  DIR_END
 };
 
 }
