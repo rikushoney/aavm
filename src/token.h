@@ -66,8 +66,8 @@ enum Kind {
   REG_END,
 
   // instructions
-  // add
   OP_START,
+  // add
   OP_add,
   OP_adc,
 
@@ -113,7 +113,7 @@ enum Kind {
   OP_and,
   OP_eor,
   OP_orr,
-  OP_orn,
+  OP_orn, // this seems to only be available in thumb mode
   OP_bic,
 
   // bit field
