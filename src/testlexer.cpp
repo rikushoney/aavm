@@ -92,7 +92,7 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
 int main(int argc, char **argv) {
   if (argc != 2) {
     std::cout << "usage: testlexer [filename]\n";
-    return -1;
+    return 1;
   }
 
   auto filestream = std::fstream{argv[1], std::ios_base::in};
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
     tok = dump_token(lexer);
 
     if (tok == parser::token::Error) {
-      return -1;
+      return 1;
     }
   } while (tok != parser::token::Eof);
 

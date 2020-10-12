@@ -8,7 +8,7 @@ using namespace aavm;
 int main(int argc, char **argv) {
   if (argc != 2) {
     std::cout << "usage: testtextbuffer [filename]\n";
-    return -1;
+    return 1;
   }
 
   auto filestream = std::fstream{argv[1], std::ios_base::in};
