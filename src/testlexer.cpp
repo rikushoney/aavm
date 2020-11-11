@@ -66,15 +66,13 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
   default:
     const auto str = parser::keyword::to_string(tok);
     if (str) {
-      if (tok > parser::token::COND_START && tok < parser::token::COND_END) {
+      if (parser::token::is_condition(tok)) {
         std::cout << "Condition " << str.value() << "\n";
-      } else if (tok > parser::token::REG_START &&
-                 tok < parser::token::REG_END) {
+      } else if (parser::token::is_register(tok)) {
         std::cout << "Register " << str.value() << "\n";
-      } else if (tok > parser::token::OP_START && tok < parser::token::OP_END) {
+      } else if (parser::token::is_instruction(tok)) {
         std::cout << "Instruction " << str.value() << "\n";
-      } else if (tok > parser::token::DIR_START &&
-                 tok < parser::token::DIR_END) {
+      } else if (parser::token::is_directive(tok)) {
         std::cout << "Directive " << str.value() << "\n";
       } else {
         std::cout << str.value() << "\n";

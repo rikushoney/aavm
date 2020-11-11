@@ -16,20 +16,23 @@ public:
 private:
   void expect(token::Kind kind, std::string_view message);
 
-  void parse_instruction();
-  void parse_arithmetic();
-  void parse_mov();
-  void parse_compare_test();
-  void parse_branch();
-  void parse_memory();
-  void parse_multiple_memory();
-  void parse_push_pop();
-  void parse_reverse();
-  void parse_bitfield();
-  void parse_multiply();
-  void parse_divide();
-  void parse_address();
-  void parse_operand2();
+  bool parse_instruction();
+  bool parse_arithmetic_instruction();
+  bool parse_multiply_instruction();
+  bool parse_divide_instruction();
+  bool parse_move_instruction();
+  bool parse_shift_instruction();
+  bool parse_compare_instruction();
+  bool parse_logical_instruction();
+  bool parse_operand2();
+  bool parse_bitfield_instruction();
+  bool parse_reverse_instruction();
+  bool parse_branch_instruction();
+  bool parse_address_instruction();
+  bool parse_memory_instruction();
+  bool parse_multiple_memory_instruction();
+  bool parse_stack_instruction();
+  bool parse_register_list();
 
   Lexer lexer_;
 };

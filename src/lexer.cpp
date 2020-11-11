@@ -2,6 +2,7 @@
 #include "character.h"
 #include "keyword_map.h"
 
+#include <assert.h>
 #include <iterator>
 
 using namespace aavm::parser;
@@ -80,6 +81,7 @@ void Lexer::lex_integer(token::Kind &tok) {
   while (is_xdigit(cur_char_)) {
     const auto val = ctoi(cur_char_);
 
+    assert(val < radix);
     if (val >= radix) {
       // invalid digit!
       tok = token::Error;
@@ -87,6 +89,7 @@ void Lexer::lex_integer(token::Kind &tok) {
     }
 
     int_value_ = int_value_ * radix + val;
+    assert(int_value_ >= 0);
     if (int_value_ < 0) {
       // overflow!
       tok = token::Error;
