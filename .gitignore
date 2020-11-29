@@ -33,3 +33,12 @@
 
 # Build directory
 build/
+
+# Cache directory
+.cache/
+
+# User vscode settings
+.vscode/
+
+# Generated compile commands
+compile_commands.json
