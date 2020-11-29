@@ -20,8 +20,25 @@ public:
   Lexer(const Charbuffer &buffer);
 
   auto get_token() {
+    if (!token_queue_.empty()) {
+      kind_ = token_queue_.front();
+      token_queue_.pop();
+      return kind_;
+    }
+
     lex_token(kind_);
     return kind_;
+  }
+
+  auto peek_token() {
+    if (!token_queue_.empty()) {
+      return token_queue_.front();
+    }
+
+    auto tok = token::Kind{};
+    lex_token(tok);
+    token_queue_.push(tok);
+    return tok;
   }
 
   auto token_kind() const { return kind_; }

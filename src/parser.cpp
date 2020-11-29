@@ -3,20 +3,30 @@
 #include <assert.h>
 
 using namespace aavm::parser;
+using namespace std::string_view_literals;
 
 Parser::Parser(const Charbuffer &buffer) : lexer_{buffer} {
+  // prime the lexer
   lexer_.get_token();
 }
 
 void Parser::expect(token::Kind kind, std::string_view message) {
-  const auto tok = lexer_.get_token();
-  assert(tok == kind);
-  if (tok != kind) {
-    // display message (and exit?)
+  if (lexer_.get_token() != kind) {
+    assert(false);
+    // did not get expected token
   }
 }
 
-bool Parser::parse_instruction() {
+void Parser::ensure_newline() {
+  if (lexer_.token_kind() != token::Newline) {
+    assert(false);
+    // expected newline after instruction
+  }
+
+  lexer_.get_token();
+}
+
+void Parser::parse_instruction() {
   const auto tok = lexer_.token_kind();
   assert(token::is_instruction(tok));
 
@@ -73,5 +83,68 @@ bool Parser::parse_instruction() {
   }
 
   // not an instruction
-  return false;
+  return;
+}
+
+std::vector<token::Kind> Parser::parse_register_list(int count) {
+  auto vec = std::vector<token::Kind>{};
+
+  assert(token::is_register(lexer_.token_kind()));
+  vec.push_back(lexer_.token_kind());
+
+  //               order here is important!
+  for (auto i = 0; lexer_.get_token() != token::Comma && i < count; ++i) {
+    if (!token::is_register(lexer_.peek_token())) {
+      break;
+    }
+
+    vec.push_back(lexer_.get_token());
+  }
+
+  return vec;
+}
+
+void Parser::parse_operand2() {
+  if (lexer_.token_kind() == token::Numbersym) {
+    expect(token::Integer, "expected constant integer value"sv);
+    lexer_.get_token();
+    return;
+  }
+
+  if (!token::is_register(lexer_.token_kind())) {
+    assert(false);
+    // must be register or integer constant
+  }
+
+  expect(token::Comma, "expected comma"sv);
+
+  if (lexer_.get_token() == token::Numbersym) {
+    expect(token::Integer, "expected integer value"sv);
+    expect(token::Comma, "expected comma"sv);
+  } else if (token::is_register(lexer_.token_kind())) {
+    expect(token::Comma, "expected comma"sv);
+  } else {
+    assert(false);
+    // error
+  }
+
+  expect(token::is_shift_instruction, "expected shift type"sv);
+  lexer_.get_token();
+}
+
+void Parser::parse_arithmetic_instruction() {
+  if (lexer_.get_token() == token::S) {
+    lexer_.get_token();
+  }
+
+  const auto registers = parse_register_list(2);
+  if (registers.size() != 2) {
+    assert(false);
+    // not enough registers
+  }
+
+  expect(token::Comma, "expected comma"sv);
+
+  lexer_.get_token();
+  parse_operand2();
 }

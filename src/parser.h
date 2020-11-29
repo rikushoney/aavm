@@ -6,6 +6,8 @@
 #include "token.h"
 
 #include <string_view>
+#include <type_traits>
+#include <vector>
 
 namespace aavm::parser {
 
@@ -15,24 +17,33 @@ public:
 
 private:
   void expect(token::Kind kind, std::string_view message);
+  template <typename Pred> void expect(Pred &&p, std::string_view message) {
+    if (!p(lexer_.get_token())) {
+      // HACK: this is not safe
+      expect(token::Error, message);
+    }
+  }
 
-  bool parse_instruction();
-  bool parse_arithmetic_instruction();
-  bool parse_multiply_instruction();
-  bool parse_divide_instruction();
-  bool parse_move_instruction();
-  bool parse_shift_instruction();
-  bool parse_compare_instruction();
-  bool parse_logical_instruction();
-  bool parse_operand2();
-  bool parse_bitfield_instruction();
-  bool parse_reverse_instruction();
-  bool parse_branch_instruction();
-  bool parse_address_instruction();
-  bool parse_memory_instruction();
-  bool parse_multiple_memory_instruction();
-  bool parse_stack_instruction();
-  bool parse_register_list();
+  void ensure_newline();
+
+  std::vector<token::Kind> parse_register_list(int count);
+  // TODO: add proper return types and parameters
+  void parse_operand2();
+  void parse_instruction();
+  void parse_arithmetic_instruction();
+  void parse_multiply_instruction();
+  void parse_divide_instruction();
+  void parse_move_instruction();
+  void parse_shift_instruction();
+  void parse_compare_instruction();
+  void parse_logical_instruction();
+  void parse_bitfield_instruction();
+  void parse_reverse_instruction();
+  void parse_branch_instruction();
+  void parse_address_instruction();
+  void parse_memory_instruction();
+  void parse_multiple_memory_instruction();
+  void parse_stack_instruction();
 
   Lexer lexer_;
 };

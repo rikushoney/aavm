@@ -81,17 +81,17 @@ void Lexer::lex_integer(token::Kind &tok) {
   while (is_xdigit(cur_char_)) {
     const auto val = ctoi(cur_char_);
 
-    assert(val < radix);
     if (val >= radix) {
       // invalid digit!
+      assert(false);
       tok = token::Error;
       return;
     }
 
     int_value_ = int_value_ * radix + val;
-    assert(int_value_ >= 0);
     if (int_value_ < 0) {
       // overflow!
+      assert(false);
       tok = token::Error;
       return;
     }
@@ -103,12 +103,6 @@ void Lexer::lex_integer(token::Kind &tok) {
 }
 
 void Lexer::lex_token(token::Kind &tok) {
-  if (!token_queue_.empty()) {
-    tok = token_queue_.front();
-    token_queue_.pop();
-    return;
-  }
-
   while (buffer_cursor_ != buffer_.end()) {
     switch (cur_char_) {
     case '\r':
