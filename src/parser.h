@@ -2,9 +2,11 @@
 #define AAVM_PARSER_H
 
 #include "lexer.h"
+#include "operand2.h"
 #include "textbuffer.h"
 #include "token.h"
 
+#include <assert.h>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -19,8 +21,7 @@ private:
   void expect(token::Kind kind, std::string_view message);
   template <typename Pred> void expect(Pred &&p, std::string_view message) {
     if (!p(lexer_.get_token())) {
-      // HACK: this is not safe
-      expect(token::Error, message);
+      assert(false);
     }
   }
 
@@ -28,7 +29,7 @@ private:
 
   std::vector<token::Kind> parse_register_list(int count);
   // TODO: add proper return types and parameters
-  void parse_operand2();
+  Operand2 parse_operand2();
   void parse_instruction();
   void parse_arithmetic_instruction();
   void parse_multiply_instruction();

@@ -89,7 +89,11 @@ void Parser::parse_instruction() {
 std::vector<token::Kind> Parser::parse_register_list(int count) {
   auto vec = std::vector<token::Kind>{};
 
-  assert(token::is_register(lexer_.token_kind()));
+  if (!token::is_register(lexer_.token_kind())) {
+    assert(false);
+    return vec;
+  }
+
   vec.push_back(lexer_.token_kind());
 
   //               order here is important!
@@ -104,32 +108,41 @@ std::vector<token::Kind> Parser::parse_register_list(int count) {
   return vec;
 }
 
-void Parser::parse_operand2() {
+Operand2 Parser::parse_operand2() {
   if (lexer_.token_kind() == token::Numbersym) {
     expect(token::Integer, "expected constant integer value"sv);
+    const auto imm = lexer_.int_value().value();
     lexer_.get_token();
-    return;
+    return Operand2::immediate(imm);
   }
 
-  if (!token::is_register(lexer_.token_kind())) {
+  const auto rm = lexer_.token_kind();
+  if (!token::is_register(rm)) {
     assert(false);
     // must be register or integer constant
   }
 
-  expect(token::Comma, "expected comma"sv);
+  if (lexer_.get_token() != token::Comma) {
+    return Operand2::shifted_register(rm, token::OP_lsl, 0);
+  }
 
+  expect(token::Comma, "expected comma"sv);
+  expect(token::is_shift_instruction, "expected shift type"sv);
+  const auto shift_type = lexer_.token_kind();
+
+  auto shift = Operand2::shift_variant{};
   if (lexer_.get_token() == token::Numbersym) {
     expect(token::Integer, "expected integer value"sv);
-    expect(token::Comma, "expected comma"sv);
+    shift = lexer_.int_value().value();
   } else if (token::is_register(lexer_.token_kind())) {
-    expect(token::Comma, "expected comma"sv);
+    shift = lexer_.token_kind();
   } else {
     assert(false);
     // error
   }
 
-  expect(token::is_shift_instruction, "expected shift type"sv);
   lexer_.get_token();
+  return Operand2::shifted_register(rm, shift_type, shift);
 }
 
 void Parser::parse_arithmetic_instruction() {
