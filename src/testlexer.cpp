@@ -9,7 +9,7 @@
 using namespace aavm;
 
 parser::token::Kind dump_token(parser::Lexer &lex) {
-  const auto tok{lex.get_token()};
+  const auto tok = lex.get_token();
 
   switch (tok) {
   case parser::token::Error:
@@ -22,10 +22,10 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
     std::cout << "Newline\n";
     break;
   case parser::token::Label:
-    std::cout << "Label \"" << lex.string_value().value() << "\"\n";
+    std::cout << "Label \"" << lex.string_value() << "\"\n";
     break;
   case parser::token::Integer:
-    std::cout << "Integer " << lex.int_value().value() << "\n";
+    std::cout << "Integer " << lex.int_value() << "\n";
     break;
   case parser::token::Comma:
     std::cout << "Comma\n";
@@ -89,7 +89,7 @@ parser::token::Kind dump_token(parser::Lexer &lex) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cout << "usage: testlexer [filename]\n";
+    std::cout << "usage: " << argv[0] << "[filename]\n";
     return 1;
   }
 

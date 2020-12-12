@@ -19,20 +19,35 @@ class Parser {
 public:
   Parser(const Charbuffer &buffer);
 
+  // TODO: make this private
+  std::unique_ptr<Instruction> parse_instruction();
+
 private:
-  void expect(token::Kind kind, std::string_view message);
   template <typename Pred> void expect(Pred &&p, std::string_view message) {
     if (!p(lexer_.get_token())) {
       assert(false);
     }
   }
 
-  void ensure_newline();
+  void expect(token::Kind kind, std::string_view message) {
+    return expect([kind](const auto given) { return given == kind; }, message);
+  }
+
+  template <typename Pred> void ensure(Pred &&p, std::string_view message) {
+    if (!p(lexer_.token_kind())) {
+      assert(false);
+    }
+
+    lexer_.get_token();
+  }
+
+  void ensure(token::Kind kind, std::string_view message) {
+    return ensure([kind](const auto given) { return given == kind; }, message);
+  }
 
   std::vector<token::Kind> parse_register_list(int count);
   // TODO: add proper return types and parameters
   Operand2 parse_operand2();
-  std::unique_ptr<Instruction> parse_instruction();
   void parse_arithmetic_instruction(std::unique_ptr<Instruction> &instruction);
   void parse_multiply_instruction(std::unique_ptr<Instruction> &instruction);
   void parse_divide_instruction(std::unique_ptr<Instruction> &instruction);

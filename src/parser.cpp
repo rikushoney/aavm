@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "keyword_map.h"
 #include "token.h"
 
 #include <assert.h>
@@ -9,22 +10,6 @@ using namespace std::string_view_literals;
 
 Parser::Parser(const Charbuffer &buffer) : lexer_{buffer} {
   // prime the lexer
-  lexer_.get_token();
-}
-
-void Parser::expect(token::Kind kind, std::string_view message) {
-  if (lexer_.get_token() != kind) {
-    assert(false);
-    // did not get expected token
-  }
-}
-
-void Parser::ensure_newline() {
-  if (lexer_.token_kind() != token::Newline) {
-    assert(false);
-    // expected newline after instruction
-  }
-
   lexer_.get_token();
 }
 
@@ -76,44 +61,43 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
 std::vector<token::Kind> Parser::parse_register_list(int count) {
   auto vec = std::vector<token::Kind>{};
 
-  if (!token::is_register(lexer_.token_kind())) {
-    assert(false);
-    return vec;
-  }
+  const auto tok = lexer_.token_kind();
+  ensure(token::is_register, "expected register");
+  vec.push_back(tok);
 
-  vec.push_back(lexer_.token_kind());
-
-  //               order here is important!
-  for (auto i = 0; lexer_.get_token() != token::Comma && i < count; ++i) {
-    if (!token::is_register(lexer_.peek_token())) {
+  for (auto i = 0; lexer_.token_kind() == token::Comma && i < count - 1; ++i) {
+    if (!token::is_register(lexer_.get_token())) {
       break;
     }
 
-    vec.push_back(lexer_.get_token());
+    vec.push_back(lexer_.token_kind());
+    lexer_.get_token();
   }
 
   return vec;
 }
 
 Operand2 Parser::parse_operand2() {
-  if (lexer_.token_kind() == token::Numbersym) {
+  switch (lexer_.token_kind()) {
+  case token::Numbersym:
     expect(token::Integer, "expected integer value"sv);
+  case token::Integer: {
     const auto imm = lexer_.int_value();
     lexer_.get_token();
     return Operand2::immediate(imm);
   }
-
-  const auto rm = lexer_.token_kind();
-  if (!token::is_register(rm)) {
-    assert(false);
-    // must be register or integer constant
+  default:
+    break;
   }
 
-  if (lexer_.get_token() != token::Comma) {
+  const auto rm = lexer_.token_kind();
+  ensure(token::is_register, "operand2 must be register or immediate");
+
+  if (lexer_.token_kind() != token::Comma) {
+    // if no shift is specified, just shift left by 0 (value stays unchanged)
     return Operand2::shifted_register(rm, token::OP_lsl, 0);
   }
 
-  expect(token::Comma, "expected comma"sv);
   expect(token::is_shift_instruction, "expected shift type"sv);
   const auto shift_type = lexer_.token_kind();
 
@@ -141,16 +125,13 @@ void Parser::parse_arithmetic_instruction(
 
   const auto registers = parse_register_list(2);
   if (registers.size() < 2) {
-    assert(false);
-    // not enough registers
+    assert(false && "not enough registers");
   }
 
   instr->rd = registers[0];
   instr->rn = registers[1];
 
-  expect(token::Comma, "expected comma"sv);
-
-  lexer_.get_token();
+  ensure(token::Comma, "expected comma");
 
   if (instr->opcode() != Instruction::opcode_type::OP_rrx) {
     instr->operand2 = parse_operand2();
@@ -158,3 +139,30 @@ void Parser::parse_arithmetic_instruction(
 
   instruction = std::move(instr);
 }
+
+void Parser::parse_multiply_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_divide_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_move_instruction(std::unique_ptr<Instruction> &instruction) {
+}
+
+void Parser::parse_comparison_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_bitfield_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_reverse_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_branch_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_single_memory_instruction(
+    std::unique_ptr<Instruction> &instruction) {}
+
+void Parser::parse_multiple_memory_instruction(
+    std::unique_ptr<Instruction> &instruction) {}

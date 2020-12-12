@@ -28,6 +28,10 @@ public:
   constexpr condition_type condition() const { return cond_; }
   constexpr bool updates_flags() const { return update_; }
 
+  static constexpr auto is_arithmetic_instruction(opcode_type opcode) {
+    return token::is_arithmetic_instruction(opcode);
+  }
+
 private:
   opcode_type op_;
   condition_type cond_;

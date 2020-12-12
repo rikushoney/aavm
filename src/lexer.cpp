@@ -37,7 +37,7 @@ void Lexer::lex_identifier(token::Kind &tok) {
   string_value_.remove_prefix(kw->first.length());
 
   // check for the optional 'S'
-  bool has_update_flag = false;
+  auto has_update_flag = false;
   if (to_lower(string_value_.front()) == 's') {
     token_queue_.push(token::S);
     has_update_flag = true;

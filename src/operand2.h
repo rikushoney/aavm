@@ -20,7 +20,6 @@ struct ShiftedRegister {
 
 struct Operand2 {
   using int_type = std::int32_t;
-
   using operand_variant = std::variant<int_type, ShiftedRegister>;
 
   operand_variant operand;
