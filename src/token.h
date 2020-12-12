@@ -62,6 +62,8 @@ enum Kind {
   REG_pc,
 
   // instructions
+  OP_nop,
+
   // add
   OP_add,
   OP_adc,
@@ -108,7 +110,6 @@ enum Kind {
   OP_and,
   OP_eor,
   OP_orr,
-  OP_orn, // this seems to only be available in thumb mode
   OP_bic,
 
   // bit field
@@ -217,6 +218,29 @@ constexpr auto is_arithmetic_instruction(Kind tok) {
   case OP_sbc:
   case OP_rsb:
   case OP_rsc:
+  case OP_asr:
+  case OP_lsl:
+  case OP_lsr:
+  case OP_ror:
+  case OP_rrx:
+  case OP_and:
+  case OP_eor:
+  case OP_orr:
+  case OP_bic:
+  case OP_adr:
+    return true;
+  default:
+    return false;
+  }
+}
+
+constexpr auto is_shift_instruction(Kind tok) {
+  switch (tok) {
+  case OP_asr:
+  case OP_lsl:
+  case OP_lsr:
+  case OP_ror:
+  case OP_rrx:
     return true;
   default:
     return false;
@@ -260,38 +284,12 @@ constexpr auto is_move_instruction(Kind tok) {
   }
 }
 
-constexpr auto is_shift_instruction(Kind tok) {
-  switch (tok) {
-  case OP_asr:
-  case OP_lsl:
-  case OP_lsr:
-  case OP_ror:
-  case OP_rrx:
-    return true;
-  default:
-    return false;
-  }
-}
-
-constexpr auto is_compare_instruction(Kind tok) {
+constexpr auto is_comparison_instruction(Kind tok) {
   switch (tok) {
   case OP_cmp:
   case OP_cmn:
-    return true;
-  default:
-    return false;
-  }
-}
-
-constexpr auto is_logical_instruction(Kind tok) {
-  switch (tok) {
   case OP_tst:
   case OP_teq:
-  case OP_and:
-  case OP_eor:
-  case OP_orr:
-  case OP_orn:
-  case OP_bic:
     return true;
   default:
     return false;
@@ -335,7 +333,7 @@ constexpr auto is_branch_instruction(Kind tok) {
   }
 }
 
-constexpr auto is_memory_instruction(Kind tok) {
+constexpr auto is_single_memory_instruction(Kind tok) {
   switch (tok) {
   case OP_ldr:
   case OP_ldrb:
@@ -351,7 +349,7 @@ constexpr auto is_memory_instruction(Kind tok) {
   }
 }
 
-constexpr auto is_multiple_memory_instruction(Kind tok) {
+constexpr auto is_block_memory_instruction(Kind tok) {
   switch (tok) {
   case OP_ldm:
   case OP_ldmia:
@@ -363,14 +361,6 @@ constexpr auto is_multiple_memory_instruction(Kind tok) {
   case OP_stmib:
   case OP_stmda:
   case OP_stmdb:
-    return true;
-  default:
-    return false;
-  }
-}
-
-constexpr auto is_stack_instruction(Kind tok) {
-  switch (tok) {
   case OP_push:
   case OP_pop:
     return true;
@@ -382,11 +372,9 @@ constexpr auto is_stack_instruction(Kind tok) {
 constexpr auto is_instruction(Kind tok) {
   return is_arithmetic_instruction(tok) || is_multiply_instruction(tok) ||
          is_divide_instruction(tok) || is_move_instruction(tok) ||
-         is_shift_instruction(tok) || is_compare_instruction(tok) ||
-         is_logical_instruction(tok) || is_bitfield_instruction(tok) ||
+         is_comparison_instruction(tok) || is_bitfield_instruction(tok) ||
          is_reverse_instruction(tok) || is_branch_instruction(tok) ||
-         is_memory_instruction(tok) || is_multiple_memory_instruction(tok) ||
-         is_stack_instruction(tok) || tok == OP_adr;
+         is_single_memory_instruction(tok) || is_block_memory_instruction(tok);
 }
 
 constexpr auto is_directive(Kind tok) {

@@ -67,8 +67,7 @@ constexpr auto gen_keyword_map() {
 
        {"tst"sv, token::OP_tst},      {"teq"sv, token::OP_teq},
        {"and"sv, token::OP_and},      {"eor"sv, token::OP_eor},
-       {"orr"sv, token::OP_orr},      {"orn"sv, token::OP_orn},
-       {"bic"sv, token::OP_bic},
+       {"orr"sv, token::OP_orr},      {"bic"sv, token::OP_bic},
 
        {"bfc"sv, token::OP_bfc},      {"bfi"sv, token::OP_bfi},
        {"sbfx"sv, token::OP_sbfx},    {"ubfx"sv, token::OP_ubfx},

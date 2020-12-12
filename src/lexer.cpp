@@ -24,7 +24,7 @@ void Lexer::lex_identifier(token::Kind &tok) {
   // it will become apparent why we copy this later
   const auto label_name = string_value_;
 
-  const auto kw = keyword::find([str = to_lower(string_value_)](auto kw) {
+  const auto kw = keyword::find([str = to_lower(string_value_)](const auto kw) {
     return starts_with(str, kw);
   });
 
@@ -37,13 +37,15 @@ void Lexer::lex_identifier(token::Kind &tok) {
   string_value_.remove_prefix(kw->first.length());
 
   // check for the optional 'S'
+  bool has_update_flag = false;
   if (to_lower(string_value_.front()) == 's') {
     token_queue_.push(token::S);
+    has_update_flag = true;
     string_value_.remove_prefix(1);
   }
 
   const auto cond = keyword::find(
-      [str = to_lower(string_value_)](auto kw) { return str == kw; });
+      [str = to_lower(string_value_)](const auto kw) { return str == kw; });
 
   if (cond != keyword::none) {
     token_queue_.push(cond->second);
@@ -52,6 +54,14 @@ void Lexer::lex_identifier(token::Kind &tok) {
 
   if (!string_value_.empty()) {
     string_value_ = label_name;
+    if (cond != keyword::none) {
+      token_queue_.pop();
+    }
+
+    if (has_update_flag) {
+      token_queue_.pop();
+    }
+
     tok = token::Label;
   }
 }

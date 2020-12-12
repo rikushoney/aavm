@@ -43,15 +43,9 @@ public:
 
   auto token_kind() const { return kind_; }
 
-  auto string_value() const {
-    return kind_ == token::Label ? std::make_optional(string_value_)
-                                 : std::nullopt;
-  }
+  auto string_value() const { return string_value_; }
 
-  auto int_value() const {
-    return kind_ == token::Integer ? std::make_optional(int_value_)
-                                   : std::nullopt;
-  }
+  auto int_value() const { return int_value_; }
 
 private:
   auto next_char() { return cur_char_ = *buffer_cursor_++; }
