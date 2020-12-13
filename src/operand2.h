@@ -1,6 +1,7 @@
 #ifndef AAVM_OPERAND2_H
 #define AAVM_OPERAND2_H
 
+#include "keyword_map.h"
 #include "token.h"
 
 #include <assert.h>
@@ -25,9 +26,9 @@ struct Operand2 {
   operand_variant operand;
 
   static auto immediate(int_type imm) {
-    auto operand = Operand2{};
-    operand.operand = imm;
-    return operand;
+    auto op2 = Operand2{};
+    op2.operand = imm;
+    return op2;
   }
 
   template <typename Shift>
@@ -40,19 +41,19 @@ struct Operand2 {
       assert(token::is_register(shift));
     }
 
-    auto operand = Operand2{};
+    auto op2 = Operand2{};
     auto regstr = ShiftedRegister{};
     regstr.rm = rm;
     regstr.op = shift_type;
     regstr.amount = shift;
-    operand.operand = regstr;
-    return operand;
+    op2.operand = regstr;
+    return op2;
   }
 
   static auto shifted_register(ShiftedRegister regstr) {
-    auto operand = Operand2{};
-    operand.operand = regstr;
-    return operand;
+    auto op2 = Operand2{};
+    op2.operand = regstr;
+    return op2;
   }
 };
 

@@ -7,72 +7,73 @@
 #include <iostream>
 
 using namespace aavm;
+using namespace aavm::parser;
 
-parser::token::Kind dump_token(parser::Lexer &lex) {
+token::Kind dump_token(Lexer &lex) {
   const auto tok = lex.get_token();
 
   switch (tok) {
-  case parser::token::Error:
+  case token::Error:
     std::cout << "Error!\n";
     break;
-  case parser::token::Eof:
+  case token::Eof:
     std::cout << "End of file\n";
     break;
-  case parser::token::Newline:
+  case token::Newline:
     std::cout << "Newline\n";
     break;
-  case parser::token::Label:
+  case token::Label:
     std::cout << "Label \"" << lex.string_value() << "\"\n";
     break;
-  case parser::token::Integer:
+  case token::Integer:
     std::cout << "Integer " << lex.int_value() << "\n";
     break;
-  case parser::token::Comma:
+  case token::Comma:
     std::cout << "Comma\n";
     break;
-  case parser::token::Exclaim:
+  case token::Exclaim:
     std::cout << "Exclaim\n";
     break;
-  case parser::token::Equal:
+  case token::Equal:
     std::cout << "Equal\n";
     break;
-  case parser::token::Numbersym:
+  case token::Numbersym:
     std::cout << "Number symbol\n";
     break;
-  case parser::token::Lbracket:
+  case token::Lbracket:
     std::cout << "Left bracket\n";
     break;
-  case parser::token::Rbracket:
+  case token::Rbracket:
     std::cout << "Right bracket\n";
     break;
-  case parser::token::Lbrace:
+  case token::Lbrace:
     std::cout << "Left brace\n";
     break;
-  case parser::token::Rbrace:
+  case token::Rbrace:
     std::cout << "Right brace\n";
     break;
-  case parser::token::Minus:
+  case token::Minus:
     std::cout << "Minus\n";
     break;
-  case parser::token::Colon:
+  case token::Colon:
     std::cout << "Colon\n";
     break;
-  case parser::token::Period:
+  case token::Period:
     std::cout << "Period\n";
     break;
-  case parser::token::S:
+  case token::S:
     std::cout << "S\n";
     break;
   default:
-    const auto str = parser::keyword::to_string(tok);
+    const auto str = keyword::to_string(tok);
     if (str) {
-      if (parser::token::is_condition(tok)) {
+      if (token::is_condition(tok)) {
         std::cout << "Condition " << str.value() << "\n";
-      } else if (parser::token::is_register(tok)) {
+      } else if (token::is_register(tok)) {
         std::cout << "Register " << str.value() << "\n";
-      } else if (parser::token::is_instruction(tok)) {
+      } else if (token::is_instruction(tok)) {
         std::cout << "Instruction " << str.value() << "\n";
-      } else if (parser::token::is_directive(tok)) {
+      } else if (token::is_directive(tok)) {
         std::cout << "Directive " << str.value() << "\n";
       } else {
         std::cout << str.value() << "\n";
@@ -95,16 +96,16 @@ int main(int argc, char **argv) {
 
   auto filestream = std::fstream{argv[1], std::ios_base::in};
   const auto buffer = Charbuffer{filestream};
-  auto lexer = parser::Lexer{buffer};
+  auto lexer = Lexer{buffer};
 
-  auto tok = parser::token::Kind{};
+  auto tok = token::Kind{};
   do {
     tok = dump_token(lexer);
 
-    if (tok == parser::token::Error) {
+    if (tok == token::Error) {
       return 1;
     }
-  } while (tok != parser::token::Eof);
+  } while (tok != token::Eof);
 
   return 0;
 }

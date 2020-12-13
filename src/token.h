@@ -218,11 +218,6 @@ constexpr auto is_arithmetic_instruction(Kind tok) {
   case OP_sbc:
   case OP_rsb:
   case OP_rsc:
-  case OP_asr:
-  case OP_lsl:
-  case OP_lsr:
-  case OP_ror:
-  case OP_rrx:
   case OP_and:
   case OP_eor:
   case OP_orr:
@@ -370,11 +365,12 @@ constexpr auto is_block_memory_instruction(Kind tok) {
 }
 
 constexpr auto is_instruction(Kind tok) {
-  return is_arithmetic_instruction(tok) || is_multiply_instruction(tok) ||
-         is_divide_instruction(tok) || is_move_instruction(tok) ||
-         is_comparison_instruction(tok) || is_bitfield_instruction(tok) ||
-         is_reverse_instruction(tok) || is_branch_instruction(tok) ||
-         is_single_memory_instruction(tok) || is_block_memory_instruction(tok);
+  return is_arithmetic_instruction(tok) || is_shift_instruction(tok) ||
+         is_multiply_instruction(tok) || is_divide_instruction(tok) ||
+         is_move_instruction(tok) || is_comparison_instruction(tok) ||
+         is_bitfield_instruction(tok) || is_reverse_instruction(tok) ||
+         is_branch_instruction(tok) || is_single_memory_instruction(tok) ||
+         is_block_memory_instruction(tok);
 }
 
 constexpr auto is_directive(Kind tok) {

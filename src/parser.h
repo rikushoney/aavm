@@ -7,7 +7,7 @@
 #include "textbuffer.h"
 #include "token.h"
 
-#include <assert.h>
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <type_traits>
@@ -17,34 +17,40 @@ namespace aavm::parser {
 
 class Parser {
 public:
+  using int_type = std::int32_t;
+
   Parser(const Charbuffer &buffer);
 
   // TODO: make this private
   std::unique_ptr<Instruction> parse_instruction();
 
 private:
-  template <typename Pred> void expect(Pred &&p, std::string_view message) {
+  template <typename Pred> auto expect(Pred &&p, std::string_view message) {
     if (!p(lexer_.get_token())) {
-      assert(false);
+      return false;
     }
+
+    return true;
   }
 
-  void expect(token::Kind kind, std::string_view message) {
+  auto expect(token::Kind kind, std::string_view message) {
     return expect([kind](const auto given) { return given == kind; }, message);
   }
 
-  template <typename Pred> void ensure(Pred &&p, std::string_view message) {
+  template <typename Pred> auto ensure(Pred &&p, std::string_view message) {
     if (!p(lexer_.token_kind())) {
-      assert(false);
+      return false;
     }
 
     lexer_.get_token();
+    return true;
   }
 
-  void ensure(token::Kind kind, std::string_view message) {
+  auto ensure(token::Kind kind, std::string_view message) {
     return ensure([kind](const auto given) { return given == kind; }, message);
   }
 
+  int_type parse_immediate();
   std::vector<token::Kind> parse_register_list(int count);
   // TODO: add proper return types and parameters
   Operand2 parse_operand2();

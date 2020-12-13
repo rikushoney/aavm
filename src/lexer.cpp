@@ -24,6 +24,7 @@ void Lexer::lex_identifier(token::Kind &tok) {
   // it will become apparent why we copy this later
   const auto label_name = string_value_;
 
+  // BUG: this will incorrectly find r1 instead of r10, r11 and r12
   const auto kw = keyword::find([str = to_lower(string_value_)](const auto kw) {
     return starts_with(str, kw);
   });
@@ -37,10 +38,9 @@ void Lexer::lex_identifier(token::Kind &tok) {
   string_value_.remove_prefix(kw->first.length());
 
   // check for the optional 'S'
-  auto has_update_flag = false;
-  if (to_lower(string_value_.front()) == 's') {
+  const auto has_update_flag = to_lower(string_value_.front()) == 's';
+  if (has_update_flag) {
     token_queue_.push(token::S);
-    has_update_flag = true;
     string_value_.remove_prefix(1);
   }
 
