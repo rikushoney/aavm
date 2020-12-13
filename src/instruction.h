@@ -1,23 +1,18 @@
+#ifndef AAVM_INSTRUCTION_H
+#define AAVM_INSTRUCTION_H
+
 #include "operand2.h"
 #include "token.h"
 
 #include <cstdint>
 
-namespace aavm {
-
-class InstructionEncoder;
-class InstructionDecoder;
-
-namespace parser {
+namespace aavm::ir {
 
 class Instruction {
-  friend InstructionDecoder;
-  friend InstructionEncoder;
-
 public:
-  using opcode_type = token::Kind;
-  using condition_type = token::Kind;
-  using register_type = token::Kind;
+  using opcode_type = parser::token::Kind;
+  using condition_type = parser::token::Kind;
+  using register_type = parser::token::Kind;
   constexpr Instruction(opcode_type op, condition_type cond, bool update)
       : op_{op}, cond_{cond}, update_{update} {}
 
@@ -29,7 +24,7 @@ public:
   constexpr bool updates_flags() const { return update_; }
 
   static constexpr auto is_arithmetic_instruction(opcode_type opcode) {
-    return token::is_arithmetic_instruction(opcode);
+    return parser::token::is_arithmetic_instruction(opcode);
   }
 
 private:
@@ -46,5 +41,6 @@ struct ArithmeticInstruction : public Instruction {
   ArithmeticInstruction(const Instruction &other) : Instruction{other} {}
 };
 
-} // namespace parser
-} // namespace aavm
+} // namespace aavm::ir
+
+#endif

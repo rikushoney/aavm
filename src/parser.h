@@ -22,7 +22,7 @@ public:
   Parser(const Charbuffer &buffer);
 
   // TODO: make this private
-  std::unique_ptr<Instruction> parse_instruction();
+  std::unique_ptr<ir::Instruction> parse_instruction();
 
 private:
   template <typename Pred> auto expect(Pred &&p, std::string_view message) {
@@ -51,21 +51,26 @@ private:
   }
 
   int_type parse_immediate();
+  void parse_shifted_register(ir::ShiftedRegister &reg);
   std::vector<token::Kind> parse_register_list(int count);
   // TODO: add proper return types and parameters
-  Operand2 parse_operand2();
-  void parse_arithmetic_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_multiply_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_divide_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_move_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_comparison_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_bitfield_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_reverse_instruction(std::unique_ptr<Instruction> &instruction);
-  void parse_branch_instruction(std::unique_ptr<Instruction> &instruction);
+  ir::Operand2 parse_operand2();
   void
-  parse_single_memory_instruction(std::unique_ptr<Instruction> &instruction);
+  parse_arithmetic_instruction(std::unique_ptr<ir::Instruction> &instruction);
   void
-  parse_multiple_memory_instruction(std::unique_ptr<Instruction> &instruction);
+  parse_multiply_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_divide_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_move_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void
+  parse_comparison_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void
+  parse_bitfield_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_reverse_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_branch_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_single_memory_instruction(
+      std::unique_ptr<ir::Instruction> &instruction);
+  void parse_multiple_memory_instruction(
+      std::unique_ptr<ir::Instruction> &instruction);
 
   Lexer lexer_;
 };

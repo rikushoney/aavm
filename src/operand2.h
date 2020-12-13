@@ -9,14 +9,14 @@
 #include <type_traits>
 #include <variant>
 
-namespace aavm::parser {
+namespace aavm::ir {
 
-using shift_variant = std::variant<std::int32_t, token::Kind>;
+using shift_variant = std::variant<std::int32_t, parser::token::Kind>;
 
 struct ShiftedRegister {
-  token::Kind rm;
-  token::Kind op;
-  shift_variant amount;
+  parser::token::Kind rm;
+  parser::token::Kind op;
+  shift_variant shift;
 };
 
 struct Operand2 {
@@ -31,32 +31,30 @@ struct Operand2 {
     return op2;
   }
 
-  template <typename Shift>
-  static auto shifted_register(token::Kind rm, token::Kind shift_type,
-                               Shift shift) {
-    static_assert(std::is_convertible_v<Shift, shift_variant>);
-    assert(token::is_register(rm));
-    assert(token::is_shift_instruction(shift_type));
-    if constexpr (std::is_same_v<Shift, token::Kind>) {
-      assert(token::is_register(shift));
-    }
-
-    auto op2 = Operand2{};
-    auto regstr = ShiftedRegister{};
-    regstr.rm = rm;
-    regstr.op = shift_type;
-    regstr.amount = shift;
-    op2.operand = regstr;
-    return op2;
-  }
-
   static auto shifted_register(ShiftedRegister regstr) {
     auto op2 = Operand2{};
     op2.operand = regstr;
     return op2;
   }
+
+  template <typename Shift>
+  static auto shifted_register(parser::token::Kind rm, parser::token::Kind op,
+                               Shift shift) {
+    static_assert(std::is_convertible_v<Shift, shift_variant>);
+    assert(parser::token::is_register(rm));
+    assert(parser::token::is_shift_instruction(op));
+    if constexpr (std::is_same_v<Shift, parser::token::Kind>) {
+      assert(parser::token::is_register(shift));
+    }
+
+    auto reg = ShiftedRegister{};
+    reg.rm = rm;
+    reg.op = op;
+    reg.shift = shift;
+    return shifted_register(reg);
+  }
 };
 
-} // namespace aavm::parser
+} // namespace aavm::ir
 
 #endif

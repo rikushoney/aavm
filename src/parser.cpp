@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <utility>
 
+using namespace aavm;
 using namespace aavm::parser;
 using namespace std::string_view_literals;
 
@@ -25,6 +26,8 @@ Parser::Parser(const Charbuffer &buffer) : lexer_{buffer} {
 }
 
 Parser::int_type Parser::parse_immediate() {
+  // parse immediate in the form:
+  // [#]?[-]?<integer>
   if (lexer_.token_kind() == token::Numbersym) {
     lexer_.get_token();
   }
@@ -39,7 +42,35 @@ Parser::int_type Parser::parse_immediate() {
   return negate ? 0 - value : value;
 }
 
+void Parser::parse_shifted_register(ir::ShiftedRegister &reg) {
+  // parse shifted register in the form:
+  // <rm>(, <shift_op> (<rs>|<immediate>))?
+  reg.rm = lexer_.token_kind();
+  ensure(token::is_register, "expected register"sv);
+
+  if (lexer_.token_kind() != token::Comma) {
+    // if no shift is specified, just shift left by 0 (value stays unchanged)
+    reg.op = token::OP_lsl;
+    reg.shift = 0;
+  }
+
+  expect(token::is_shift_instruction, "expected shift type"sv);
+  reg.op = lexer_.token_kind();
+
+  if (immediate_follows(lexer_.get_token())) {
+    reg.shift = parse_immediate();
+  } else if (token::is_register(lexer_.token_kind())) {
+    reg.shift = lexer_.token_kind();
+  } else {
+    assert(false && "expected immediate or register shift");
+  }
+
+  lexer_.get_token();
+}
+
 std::vector<token::Kind> Parser::parse_register_list(int count) {
+  // parse up to count registers in the form:
+  // (<register>,)+<register>
   auto vec = std::vector<token::Kind>{};
 
   const auto reg = lexer_.token_kind();
@@ -58,36 +89,19 @@ std::vector<token::Kind> Parser::parse_register_list(int count) {
   return vec;
 }
 
-Operand2 Parser::parse_operand2() {
+ir::Operand2 Parser::parse_operand2() {
+  // parse immediate or shifted register in the form:
+  // (<immediate>|<shifted_register>)
   if (immediate_follows(lexer_.token_kind())) {
-    return Operand2::immediate(parse_immediate());
+    return ir::Operand2::immediate(parse_immediate());
   }
 
-  const auto rm = lexer_.token_kind();
-  ensure(token::is_register, "operand2 must be register or immediate"sv);
-
-  if (lexer_.token_kind() != token::Comma) {
-    // if no shift is specified, just shift left by 0 (value stays unchanged)
-    return Operand2::shifted_register(rm, token::OP_lsl, 0);
-  }
-
-  expect(token::is_shift_instruction, "expected shift type"sv);
-  const auto shift_type = lexer_.token_kind();
-
-  auto shift = shift_variant{};
-  if (immediate_follows(lexer_.get_token())) {
-    shift = parse_immediate();
-  } else if (token::is_register(lexer_.token_kind())) {
-    shift = lexer_.token_kind();
-  } else {
-    assert(false && "expected immediate or register shift");
-  }
-
-  lexer_.get_token();
-  return Operand2::shifted_register(rm, shift_type, shift);
+  auto reg = ir::ShiftedRegister{};
+  parse_shifted_register(reg);
+  return ir::Operand2::shifted_register(reg);
 }
 
-std::unique_ptr<Instruction> Parser::parse_instruction() {
+std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
   const auto op = lexer_.token_kind();
   assert(token::is_instruction(op));
 
@@ -99,9 +113,9 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
 
   const auto cond = token::is_condition(lexer_.token_kind())
                         ? lexer_.token_kind()
-                        : Instruction::condition_type::COND_al;
+                        : ir::Instruction::condition_type::COND_al;
 
-  auto instruction = std::make_unique<Instruction>(op, cond, update);
+  auto instruction = std::make_unique<ir::Instruction>(op, cond, update);
 
   if (token::is_arithmetic_instruction(op)) {
     parse_arithmetic_instruction(instruction);
@@ -132,9 +146,11 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
 }
 
 void Parser::parse_arithmetic_instruction(
-    std::unique_ptr<Instruction> &instruction) {
-  // look into avoiding the unnecessary copying
-  auto instr = std::make_unique<ArithmeticInstruction>(*instruction.get());
+    std::unique_ptr<ir::Instruction> &instruction) {
+  // parse arithmetic instruction in the form:
+  // <opcode> <rd>, <rn>, <operand2>
+  // TODO: look into avoiding the unnecessary copying
+  auto instr = std::make_unique<ir::ArithmeticInstruction>(*instruction.get());
 
   const auto registers = parse_register_list(2);
   if (registers.size() < 2) {
@@ -146,7 +162,7 @@ void Parser::parse_arithmetic_instruction(
 
   ensure(token::Comma, "expected comma"sv);
 
-  if (instr->opcode() != Instruction::opcode_type::OP_rrx) {
+  if (instr->opcode() != ir::Instruction::opcode_type::OP_rrx) {
     instr->operand2 = parse_operand2();
   }
 
@@ -154,28 +170,28 @@ void Parser::parse_arithmetic_instruction(
 }
 
 void Parser::parse_multiply_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_divide_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
-void Parser::parse_move_instruction(std::unique_ptr<Instruction> &instruction) {
-}
+void Parser::parse_move_instruction(
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_comparison_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_bitfield_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_reverse_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_branch_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_single_memory_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
 
 void Parser::parse_multiple_memory_instruction(
-    std::unique_ptr<Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {}
