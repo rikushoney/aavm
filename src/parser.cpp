@@ -70,7 +70,7 @@ void Parser::parse_shifted_register(ir::ShiftedRegister &reg) {
 
 std::vector<token::Kind> Parser::parse_register_list(int count) {
   // parse up to count registers in the form:
-  // (<register>,)+<register>
+  // (<register>,)*<register>
   auto vec = std::vector<token::Kind>{};
 
   const auto reg = lexer_.token_kind();
@@ -160,9 +160,9 @@ void Parser::parse_arithmetic_instruction(
   instr->rd = registers[0];
   instr->rn = registers[1];
 
-  ensure(token::Comma, "expected comma"sv);
-
+  // rrx doesnt get operand2
   if (instr->opcode() != ir::Instruction::opcode_type::OP_rrx) {
+    ensure(token::Comma, "expected comma"sv);
     instr->operand2 = parse_operand2();
   }
 

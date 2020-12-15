@@ -121,6 +121,19 @@ template <typename Pred> constexpr auto find(Pred &&pred) {
   return none;
 }
 
+template <typename Pred> constexpr auto find_longest(Pred &&pred) {
+  auto match = none;
+  for (auto it = detail::keyword_map.begin(); it != none; ++it) {
+    if (pred(it->first)) {
+      if (match == none || match->first.length() < it->first.length()) {
+        match = it;
+      }
+    }
+  }
+
+  return match;
+}
+
 constexpr auto to_string(token::Kind tok) -> std::optional<std::string_view> {
   for (auto it = detail::keyword_map.begin(); it != none; ++it) {
     if (it->second == tok) {

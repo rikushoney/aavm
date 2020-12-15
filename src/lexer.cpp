@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include "character.h"
 #include "keyword_map.h"
+#include "token.h"
 
 #include <assert.h>
 #include <iterator>
@@ -21,39 +22,46 @@ void Lexer::lex_identifier(token::Kind &tok) {
   }
 
   string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
-  // it will become apparent why we copy this later
-  const auto label_name = string_value_;
 
-  // BUG: this will incorrectly find r1 instead of r10, r11 and r12
-  const auto kw = keyword::find([str = to_lower(string_value_)](const auto kw) {
-    return starts_with(str, kw);
-  });
+  const auto lowercase = to_lower(string_value_);
+  const auto kw = keyword::find_longest(
+      [lowercase](const auto kw) { return starts_with(lowercase, kw); });
 
-  if (kw == keyword::none) {
+  const auto is_valid_register = token::is_register(kw->second) &&
+                                 kw->first.length() == string_value_.length();
+
+  if (kw == keyword::none || !is_valid_register) {
     tok = token::Label;
     return;
   }
 
   tok = kw->second;
-  string_value_.remove_prefix(kw->first.length());
+
+  if (!token::is_instruction(tok)) {
+    return;
+  }
+
+  // assume the token is an instruction with optional suffixes
+  auto str = string_value_;
+  str.remove_prefix(kw->first.length());
 
   // check for the optional 'S'
-  const auto has_update_flag = to_lower(string_value_.front()) == 's';
+  const auto has_update_flag = to_lower(str.front()) == 's';
   if (has_update_flag) {
     token_queue_.push(token::S);
-    string_value_.remove_prefix(1);
+    str.remove_prefix(1);
   }
 
   const auto cond = keyword::find(
-      [str = to_lower(string_value_)](const auto kw) { return str == kw; });
+      [cond_str = to_lower(str)](const auto kw) { return cond_str == kw; });
 
   if (cond != keyword::none) {
     token_queue_.push(cond->second);
-    string_value_.remove_prefix(cond->first.length());
+    str.remove_prefix(cond->first.length());
   }
 
-  if (!string_value_.empty()) {
-    string_value_ = label_name;
+  if (!str.empty()) {
+    // assumption is incorrect - token is not valid instruction => must be label
     if (cond != keyword::none) {
       token_queue_.pop();
     }
