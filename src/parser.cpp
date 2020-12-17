@@ -127,6 +127,8 @@ std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
     parse_divide_instruction(instruction);
   } else if (token::is_move_instruction(op)) {
     parse_move_instruction(instruction);
+  } else if (token::is_shift_instruction(op)) {
+    parse_shift_instruction(instruction);
   } else if (token::is_comparison_instruction(op)) {
     parse_comparison_instruction(instruction);
   } else if (token::is_bitfield_instruction(op)) {
@@ -140,8 +142,7 @@ std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
   } else if (token::is_block_memory_instruction(op)) {
     parse_multiple_memory_instruction(instruction);
   } else {
-    // not a valid instruction
-    assert(false);
+    assert(false && "not an instruction");
   }
 
   return instruction;
@@ -275,6 +276,8 @@ void Parser::parse_shift_instruction(
   auto src = ir::ShiftedRegister{};
   src.rm = registers[1];
   src.op = instr->opcode();
+
+  expect(token::Comma, "expected comma"sv);
 
   if (token::is_register(lexer_.token_kind())) {
     src.shift = lexer_.token_kind();
