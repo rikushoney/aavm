@@ -113,9 +113,11 @@ std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
     lexer_.get_token();
   }
 
-  const auto cond = token::is_condition(lexer_.token_kind())
-                        ? lexer_.token_kind()
-                        : ir::Instruction::condition_type::COND_al;
+  auto cond = ir::Instruction::condition_type::COND_al;
+  if (token::is_condition(lexer_.token_kind())) {
+    cond = lexer_.token_kind();
+    lexer_.get_token();
+  }
 
   auto instruction = std::make_unique<ir::Instruction>(op, cond, update);
 
