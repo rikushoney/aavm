@@ -5,10 +5,19 @@
 #include "token.h"
 
 #include <cstdint>
+#include <variant>
 
-namespace aavm::ir {
+namespace aavm {
+
+namespace parser {
+class Parser;
+}
+
+namespace ir {
 
 class Instruction {
+  friend class parser::Parser;
+
 public:
   using opcode_type = parser::token::Kind;
   using condition_type = parser::token::Kind;
@@ -41,6 +50,35 @@ struct ArithmeticInstruction : public Instruction {
   ArithmeticInstruction(const Instruction &other) : Instruction{other} {}
 };
 
-} // namespace aavm::ir
+struct MultiplyInstruction : public Instruction {
+  register_type rd;
+  register_type rm;
+  register_type rs;
+  register_type rn;
+  register_type rdlo;
+  register_type rdhi;
+
+  MultiplyInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct DivideInstruction : public Instruction {
+  register_type rd;
+  register_type rn;
+  register_type rm;
+
+  DivideInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct MoveInstruction : public Instruction {
+  using imm16 = std::uint16_t;
+  using source_variant = std::variant<Operand2, imm16>;
+  register_type rd;
+  source_variant src;
+
+  MoveInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+} // namespace ir
+} // namespace aavm
 
 #endif

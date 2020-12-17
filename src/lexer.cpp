@@ -23,21 +23,22 @@ void Lexer::lex_identifier(token::Kind &tok) {
 
   string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
 
-  const auto lowercase = to_lower(string_value_);
   const auto kw = keyword::find_longest(
-      [lowercase](const auto kw) { return starts_with(lowercase, kw); });
+      [lowercase = to_lower(string_value_)](const auto kw) {
+        return starts_with(lowercase, kw);
+      });
 
   const auto is_valid_register = token::is_register(kw->second) &&
                                  kw->first.length() == string_value_.length();
 
-  if (kw == keyword::none || !is_valid_register) {
-    tok = token::Label;
+  tok = kw->second;
+
+  if (is_valid_register) {
     return;
   }
 
-  tok = kw->second;
-
-  if (!token::is_instruction(tok)) {
+  if (kw == keyword::none || !token::is_instruction(tok)) {
+    tok = token::Label;
     return;
   }
 
@@ -53,7 +54,7 @@ void Lexer::lex_identifier(token::Kind &tok) {
   }
 
   const auto cond = keyword::find(
-      [cond_str = to_lower(str)](const auto kw) { return cond_str == kw; });
+      [lowercase = to_lower(str)](const auto kw) { return lowercase == kw; });
 
   if (cond != keyword::none) {
     token_queue_.push(cond->second);

@@ -50,7 +50,7 @@ private:
     return ensure([kind](const auto given) { return given == kind; }, message);
   }
 
-  int_type parse_immediate();
+  int_type parse_immediate_value();
   void parse_shifted_register(ir::ShiftedRegister &reg);
   std::vector<token::Kind> parse_register_list(int count);
   // TODO: add proper return types and parameters
@@ -61,6 +61,7 @@ private:
   parse_multiply_instruction(std::unique_ptr<ir::Instruction> &instruction);
   void parse_divide_instruction(std::unique_ptr<ir::Instruction> &instruction);
   void parse_move_instruction(std::unique_ptr<ir::Instruction> &instruction);
+  void parse_shift_instruction(std::unique_ptr<ir::Instruction> &instruction);
   void
   parse_comparison_instruction(std::unique_ptr<ir::Instruction> &instruction);
   void

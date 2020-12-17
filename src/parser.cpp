@@ -1,8 +1,10 @@
 #include "parser.h"
+#include "instruction.h"
 #include "operand2.h"
 #include "token.h"
 
 #include <assert.h>
+#include <memory>
 #include <utility>
 
 using namespace aavm;
@@ -25,7 +27,7 @@ Parser::Parser(const Charbuffer &buffer) : lexer_{buffer} {
   lexer_.get_token();
 }
 
-Parser::int_type Parser::parse_immediate() {
+Parser::int_type Parser::parse_immediate_value() {
   // parse immediate in the form:
   // [#]?[-]?<integer>
   if (lexer_.token_kind() == token::Numbersym) {
@@ -58,7 +60,7 @@ void Parser::parse_shifted_register(ir::ShiftedRegister &reg) {
   reg.op = lexer_.token_kind();
 
   if (immediate_follows(lexer_.get_token())) {
-    reg.shift = parse_immediate();
+    reg.shift = parse_immediate_value();
   } else if (token::is_register(lexer_.token_kind())) {
     reg.shift = lexer_.token_kind();
   } else {
@@ -93,7 +95,7 @@ ir::Operand2 Parser::parse_operand2() {
   // parse immediate or shifted register in the form:
   // (<immediate>|<shifted_register>)
   if (immediate_follows(lexer_.token_kind())) {
-    return ir::Operand2::immediate(parse_immediate());
+    return ir::Operand2::immediate(parse_immediate_value());
   }
 
   auto reg = ir::ShiftedRegister{};
@@ -160,23 +162,136 @@ void Parser::parse_arithmetic_instruction(
   instr->rd = registers[0];
   instr->rn = registers[1];
 
-  // rrx doesnt get operand2
-  if (instr->opcode() != ir::Instruction::opcode_type::OP_rrx) {
-    ensure(token::Comma, "expected comma"sv);
-    instr->operand2 = parse_operand2();
-  }
+  ensure(token::Comma, "expected comma"sv);
+  instr->operand2 = parse_operand2();
 
   instruction = std::move(instr);
 }
 
 void Parser::parse_multiply_instruction(
-    std::unique_ptr<ir::Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {
+  // parse multiply instruction in the form:
+  // <opcode> <rd>, <rm>, <rs>(, <rn>)? or
+  // <opcode> <rdlo>, <rdhi>, <rm>, <rs>
+  auto instr = std::make_unique<ir::MultiplyInstruction>(*instruction.get());
+
+  const auto register_count =
+      instruction->opcode() == ir::Instruction::opcode_type::OP_mul ? 3 : 4;
+
+  const auto registers = parse_register_list(register_count);
+  if (registers.size() != register_count) {
+    assert(false && "not enough registers");
+  }
+
+  switch (instr->opcode()) {
+  case ir::Instruction::opcode_type::OP_mla:
+  case ir::Instruction::opcode_type::OP_mls:
+    instr->rn = registers[3];
+  case ir::Instruction::opcode_type::OP_mul:
+    instr->rd = registers[0];
+    instr->rm = registers[1];
+    instr->rs = registers[2];
+    break;
+  case ir::Instruction::opcode_type::OP_umull:
+  case ir::Instruction::opcode_type::OP_smull:
+  case ir::Instruction::opcode_type::OP_umlal:
+  case ir::Instruction::opcode_type::OP_smlal:
+    instr->rdlo = registers[0];
+    instr->rdhi = registers[1];
+    instr->rm = registers[2];
+    instr->rs = registers[3];
+    break;
+  default:
+    assert(false && "not multiply instruction");
+    break;
+  }
+
+  instruction = std::move(instr);
+}
 
 void Parser::parse_divide_instruction(
-    std::unique_ptr<ir::Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {
+  // parse divide instruction in the form:
+  // <opcode> <rd>, <rn>, <rm>
+  auto instr = std::make_unique<ir::DivideInstruction>(*instruction.get());
+
+  const auto registers = parse_register_list(3);
+  if (registers.size() != 3) {
+    assert(false && "not enough registers");
+  }
+
+  instr->rd = registers[0];
+  instr->rn = registers[2];
+  instr->rm = registers[3];
+
+  instruction = std::move(instr);
+}
 
 void Parser::parse_move_instruction(
-    std::unique_ptr<ir::Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {
+  // parse move instruction in the form:
+  // <opcode> <rd>, (<imm16>|<operand2>)
+  auto instr = std::make_unique<ir::MoveInstruction>(*instruction.get());
+
+  const auto registers = parse_register_list(1);
+  instr->rd = registers[0];
+
+  switch (instr->opcode()) {
+  case ir::Instruction::opcode_type::OP_mov:
+  case ir::Instruction::opcode_type::OP_mvn: {
+    const auto op2 = parse_operand2();
+    instr->src = op2;
+    break;
+  }
+  case ir::Instruction::opcode_type::OP_movt:
+  case ir::Instruction::opcode_type::OP_movw: {
+    const auto val = parse_immediate_value();
+    ensure(token::Integer, "expected imm16"sv);
+    if (val < 0 || val > 65535) {
+      assert(false && "imm16 must be between 0 and 65535");
+    }
+    instr->src = static_cast<ir::MoveInstruction::imm16>(val);
+    break;
+  }
+  default:
+    assert(false && "not a move instruction");
+  }
+
+  instruction = std::move(instr);
+}
+
+void Parser::parse_shift_instruction(
+    std::unique_ptr<ir::Instruction> &instruction) {
+  // parse shift instruction in the form:
+  // <opcode> <rd>, <rm>, (<rs>|<immediate>)
+  auto instr = std::make_unique<ir::MoveInstruction>(*instruction.get());
+
+  const auto registers = parse_register_list(2);
+  if (registers.size() != 2) {
+    assert(false && "not enough registers");
+  }
+
+  instr->rd = registers[0];
+  auto src = ir::ShiftedRegister{};
+  src.rm = registers[1];
+  src.op = instr->opcode();
+
+  if (token::is_register(lexer_.token_kind())) {
+    src.shift = lexer_.token_kind();
+    lexer_.get_token();
+  } else if (immediate_follows(lexer_.token_kind())) {
+    src.shift = parse_immediate_value();
+  } else {
+    assert(false && "expected register or immediate value");
+  }
+
+  auto op2 = ir::Operand2{};
+  op2.operand = src;
+  instr->src = op2;
+  instr->op_ = ir::Instruction::opcode_type::OP_mov;
+
+  instruction = std::move(instr);
+}
 
 void Parser::parse_comparison_instruction(
     std::unique_ptr<ir::Instruction> &instruction) {}
