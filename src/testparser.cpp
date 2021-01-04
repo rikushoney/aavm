@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
               << "\n";
     std::cout << "Rd: " << keyword::to_string(instr.rd).value() << "\n";
     std::cout << "Rn: " << keyword::to_string(instr.rn).value() << "\n";
-    dump_operand2(instr.operand2);
+    dump_operand2(instr.src2);
   }
 
   return 0;

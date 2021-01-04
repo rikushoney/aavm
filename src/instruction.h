@@ -45,7 +45,7 @@ private:
 struct ArithmeticInstruction : public Instruction {
   register_type rd;
   register_type rn;
-  Operand2 operand2;
+  Operand2 src2;
 
   ArithmeticInstruction(const Instruction &other) : Instruction{other} {}
 };
@@ -76,6 +76,40 @@ struct MoveInstruction : public Instruction {
   source_variant src;
 
   MoveInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct CompareInstruction : public Instruction {
+  register_type rn;
+  Operand2 src2;
+
+  CompareInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct BitfieldInstruction : public Instruction {
+  using int_type = std::int32_t;
+  register_type rd;
+  register_type rn;
+  int_type lsb;
+  int_type width;
+
+  BitfieldInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct ReverseInstruction : public Instruction {
+  register_type rd;
+  register_type rm;
+
+  ReverseInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct BranchInstruction : public Instruction {
+  using int_type = std::int32_t;
+  using offset_variant = std::variant<int_type, std::string_view>;
+  offset_variant target;
+  register_type rm;
+  register_type rn;
+
+  BranchInstruction(const Instruction &other) : Instruction{other} {}
 };
 
 } // namespace ir
