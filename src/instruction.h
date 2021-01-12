@@ -19,6 +19,7 @@ class Instruction {
   friend class parser::Parser;
 
 public:
+  using int_type = std::int32_t;
   using opcode_type = parser::token::Kind;
   using condition_type = parser::token::Kind;
   using register_type = parser::token::Kind;
@@ -86,7 +87,6 @@ struct CompareInstruction : public Instruction {
 };
 
 struct BitfieldInstruction : public Instruction {
-  using int_type = std::int32_t;
   register_type rd;
   register_type rn;
   int_type lsb;
@@ -103,13 +103,23 @@ struct ReverseInstruction : public Instruction {
 };
 
 struct BranchInstruction : public Instruction {
-  using int_type = std::int32_t;
   using offset_variant = std::variant<int_type, std::string_view>;
   offset_variant target;
   register_type rm;
   register_type rn;
 
   BranchInstruction(const Instruction &other) : Instruction{other} {}
+};
+
+struct SingleMemoryInstruction : public Instruction {
+  using source_variant = std::variant<int_type, std::string_view>;
+  register_type rd;
+  register_type rn;
+  Operand2 src2;
+  enum class IndexMode { Post, Offset, Pre } indexmode;
+  source_variant altsrc;
+
+  SingleMemoryInstruction(const Instruction &other) : Instruction{other} {}
 };
 
 } // namespace ir

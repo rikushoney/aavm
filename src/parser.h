@@ -52,7 +52,7 @@ private:
 
   int_type parse_immediate_value();
   void parse_shifted_register(ir::ShiftedRegister &reg);
-  std::vector<token::Kind> parse_register_list(int count);
+  std::vector<token::Kind> parse_register_list(std::size_t count);
   // TODO: add proper return types and parameters
   ir::Operand2 parse_operand2();
   void

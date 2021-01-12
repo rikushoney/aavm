@@ -17,6 +17,7 @@ struct ShiftedRegister {
   parser::token::Kind rm;
   parser::token::Kind op;
   shift_variant shift;
+  bool subtract;
 };
 
 struct Operand2 {
