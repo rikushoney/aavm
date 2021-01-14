@@ -23,6 +23,19 @@ constexpr auto immediate_follows(token::Kind kind) {
   }
 }
 
+constexpr auto is_single_memory_load_instruction(token::Kind kind) {
+  switch (kind) {
+  case token::OP_ldr:
+  case token::OP_ldrb:
+  case token::OP_ldrh:
+  case token::OP_ldrsb:
+  case token::OP_ldrsh:
+    return true;
+  default:
+    return false;
+  }
+}
+
 Parser::Parser(const Charbuffer &buffer) : lexer_{buffer} {
   // prime the lexer
   lexer_.get_token();
@@ -254,6 +267,7 @@ void Parser::parse_move_instruction(
 
   instr->rd = lexer_.token_kind();
   ensure(token::is_register, "expected register"sv);
+  ensure(token::Comma, "expected comma"sv);
 
   switch (instr->opcode()) {
   case ir::Instruction::opcode_type::OP_mov:
@@ -411,11 +425,19 @@ void Parser::parse_single_memory_instruction(
   ensure(token::is_register, "expected register"sv);
   ensure(token::Comma, "expected comma"sv);
 
-  if (immediate_follows(lexer_.token_kind())) {
-    instr->altsrc = parse_immediate_value();
-  } else if (lexer_.token_kind() == token::Label) {
-    instr->altsrc = lexer_.string_value();
-    lexer_.get_token();
+  if (lexer_.token_kind() == token::Equal) {
+    if (immediate_follows(lexer_.get_token())) {
+      if (instr->opcode() != token::OP_ldr) {
+        assert(false && "only ldr is supported");
+      }
+      instr->source = parse_immediate_value();
+    } else {
+      if (!is_single_memory_load_instruction(instr->opcode())) {
+        assert(false && "only ldr-like instructions are supported");
+      }
+      instr->source = lexer_.string_value();
+      lexer_.get_token();
+    }
   } else {
     ensure(token::Lbracket, "expected opening bracket"sv);
     instr->rn = lexer_.token_kind();
@@ -423,18 +445,22 @@ void Parser::parse_single_memory_instruction(
 
     if (lexer_.token_kind() == token::Rbracket) {
       instr->indexmode = ir::SingleMemoryInstruction::IndexMode::Post;
-      if (lexer_.token_kind() == token::Comma) {
-        instr->src2 = parse_operand2();
+      if (lexer_.get_token() == token::Comma) {
+        lexer_.get_token();
+        instr->source = parse_operand2();
       } else {
-        instr->src2.operand = 0;
+        instr->source = ir::Operand2::immediate(0);
       }
     } else {
       ensure(token::Comma, "expected comma"sv);
-      instr->src2 = parse_operand2();
+      instr->source = parse_operand2();
       ensure(token::Rbracket, "expected closing bracket"sv);
-      instr->indexmode = lexer_.token_kind() == token::Exclaim
-                             ? ir::SingleMemoryInstruction::IndexMode::Pre
-                             : ir::SingleMemoryInstruction::IndexMode::Offset;
+      if (lexer_.token_kind() == token::Exclaim) {
+        lexer_.get_token();
+        instr->indexmode = ir::SingleMemoryInstruction::IndexMode::Pre;
+      } else {
+        instr->indexmode = ir::SingleMemoryInstruction::IndexMode::Offset;
+      }
     }
   }
 

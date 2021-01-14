@@ -15,7 +15,7 @@ namespace aavm::parser {
 class Lexer {
 public:
   using string_type = std::string_view;
-  using int_type = std::int32_t;
+  using int_type = std::int64_t;
 
   Lexer(const Charbuffer &buffer);
 
@@ -57,6 +57,7 @@ private:
   const Charbuffer &buffer_;
   Charbuffer::iterator buffer_cursor_;
   char cur_char_;
+  int_type line_number_;
 
   token::Kind kind_;
   string_type string_value_;

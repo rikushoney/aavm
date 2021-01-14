@@ -112,12 +112,11 @@ struct BranchInstruction : public Instruction {
 };
 
 struct SingleMemoryInstruction : public Instruction {
-  using source_variant = std::variant<int_type, std::string_view>;
+  using source_variant = std::variant<Operand2, int_type, std::string_view>;
   register_type rd;
   register_type rn;
-  Operand2 src2;
+  source_variant source;
   enum class IndexMode { Post, Offset, Pre } indexmode;
-  source_variant altsrc;
 
   SingleMemoryInstruction(const Instruction &other) : Instruction{other} {}
 };

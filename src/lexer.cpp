@@ -9,7 +9,7 @@
 using namespace aavm::parser;
 
 Lexer::Lexer(const Charbuffer &buffer)
-    : buffer_{buffer}, buffer_cursor_{buffer_.begin()} {
+    : buffer_{buffer}, buffer_cursor_{buffer_.begin()}, line_number_{1} {
   // prime the first character
   next_char();
 }
@@ -17,12 +17,14 @@ Lexer::Lexer(const Charbuffer &buffer)
 void Lexer::lex_identifier(token::Kind &tok) {
   const auto tok_start = std::prev(buffer_cursor_);
 
-  while (is_alnum(cur_char_)) {
+  while (is_alnum(cur_char_) || cur_char_ == '_' || cur_char_ == '.') {
     next_char();
   }
 
   string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
 
+  // TODO: does not find blt correctly - finds bl as instruction and then t is
+  // an invalid suffix where it should be b with lt suffix
   const auto kw = keyword::find_longest(
       [lowercase = to_lower(string_value_)](const auto kw) {
         return starts_with(lowercase, kw);
@@ -108,7 +110,7 @@ void Lexer::lex_integer(token::Kind &tok) {
     }
 
     int_value_ = int_value_ * radix + val;
-    if (int_value_ < 0) {
+    if (int_value_ > 0xFFFFFFFF) {
       // overflow!
       assert(false);
       tok = token::Error;
@@ -131,6 +133,7 @@ void Lexer::lex_token(token::Kind &tok) {
       continue;
     case '\n':
       tok = token::Newline;
+      ++line_number_;
       break;
     case ',':
       tok = token::Comma;
@@ -170,6 +173,7 @@ void Lexer::lex_token(token::Kind &tok) {
         // just skip everything until we reach end of line
       }
       tok = token::Newline;
+      ++line_number_;
       break;
     default:
       if (is_alpha(cur_char_)) {
