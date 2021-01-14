@@ -37,17 +37,7 @@ int main(int argc, char **argv) {
   auto filestream = std::fstream{argv[1], std::ios_base::in};
   const auto buffer = Charbuffer{filestream};
   auto parser = Parser{buffer};
-  const auto parsed = parser.parse_instruction();
-
-  if (ir::Instruction::is_arithmetic_instruction(parsed->opcode())) {
-    const auto instr = static_cast<ir::ArithmeticInstruction &>(*parsed.get());
-    std::cout << "Parsed arithmetic instruction:\n";
-    std::cout << "Opcode: " << keyword::to_string(parsed->opcode()).value()
-              << "\n";
-    std::cout << "Rd: " << keyword::to_string(instr.rd).value() << "\n";
-    std::cout << "Rn: " << keyword::to_string(instr.rn).value() << "\n";
-    dump_operand2(instr.src2);
-  }
+  const auto parsed = parser.parse_instructions();
 
   return 0;
 }

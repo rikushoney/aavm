@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "array.h"
 #include "instruction.h"
 #include "operand2.h"
 #include "token.h"
@@ -84,6 +85,32 @@ std::vector<token::Kind> Parser::parse_register_list(std::size_t count) {
   return vec;
 }
 
+std::vector<token::Kind> Parser::parse_register_range() {
+  auto vec = std::vector<token::Kind>{};
+
+  const auto register_start = lexer_.token_kind();
+  assert(lexer_.get_token() == token::Minus && "expected minus");
+  const auto register_end = lexer_.get_token();
+
+  // HACK: this is ghetto
+  constexpr auto register_map =
+      make_array({token::REG_r0, token::REG_r1, token::REG_r2, token::REG_r3,
+                  token::REG_r4, token::REG_r5, token::REG_r6, token::REG_r7,
+                  token::REG_r8, token::REG_r9, token::REG_r10, token::REG_r11,
+                  token::REG_r12, token::REG_sp, token::REG_lr, token::REG_pc});
+
+  const auto last = static_cast<std::size_t>(register_end - token::REG_r0);
+
+  for (auto i = static_cast<std::size_t>(register_start - token::REG_r0);
+       i <= last; ++i) {
+    vec.push_back(register_map[i]);
+  }
+
+  lexer_.get_token();
+
+  return vec;
+}
+
 ir::Operand2 Parser::parse_operand2() {
   const auto subtract = lexer_.token_kind() == token::Minus &&
                         token::is_register(lexer_.peek_token());
@@ -142,6 +169,10 @@ std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
     assert(false && "not an instruction");
   }
 
+  ensure(
+      [](const auto tok) { return tok == token::Newline || tok == token::Eof; },
+      "only single instruction permitted per line"sv);
+
   return instruction;
 }
 
@@ -171,7 +202,7 @@ void Parser::parse_multiply_instruction(
       instruction->opcode() == ir::Instruction::opcode_type::OP_mul ? 3 : 4;
 
   const auto registers = parse_register_list(register_count);
-  if (registers.size() != register_count) {
+  if (registers.size() < register_count) {
     assert(false && "not enough registers");
   }
 
@@ -206,7 +237,7 @@ void Parser::parse_divide_instruction(
   auto instr = std::make_unique<ir::DivideInstruction>(*instruction.get());
 
   const auto registers = parse_register_list(3);
-  if (registers.size() != 3) {
+  if (registers.size() < 3) {
     assert(false && "not enough registers");
   }
 
@@ -221,8 +252,8 @@ void Parser::parse_move_instruction(
     std::unique_ptr<ir::Instruction> &instruction) {
   auto instr = std::make_unique<ir::MoveInstruction>(*instruction.get());
 
-  const auto registers = parse_register_list(1);
-  instr->rd = registers[0];
+  instr->rd = lexer_.token_kind();
+  ensure(token::is_register, "expected register"sv);
 
   switch (instr->opcode()) {
   case ir::Instruction::opcode_type::OP_mov:
@@ -253,7 +284,7 @@ void Parser::parse_shift_instruction(
   auto instr = std::make_unique<ir::MoveInstruction>(*instruction.get());
 
   const auto registers = parse_register_list(2);
-  if (registers.size() != 2) {
+  if (registers.size() < 2) {
     assert(false && "not enough registers");
   }
 
@@ -411,4 +442,46 @@ void Parser::parse_single_memory_instruction(
 }
 
 void Parser::parse_multiple_memory_instruction(
-    std::unique_ptr<ir::Instruction> &instruction) {}
+    std::unique_ptr<ir::Instruction> &instruction) {
+  auto instr =
+      std::make_unique<ir::MultipleMemoryInstruction>(*instruction.get());
+
+  instr->rn = lexer_.token_kind();
+  ensure(token::is_register, "expected register"sv);
+  ensure(token::Comma, "expected comma"sv);
+  ensure(token::Lbrace, "expected opening brace"sv);
+
+  while (lexer_.token_kind() != token::Rbrace) {
+    if (!token::is_register(lexer_.token_kind())) {
+      assert(false && "expected register");
+    }
+
+    if (lexer_.peek_token() == token::Minus) {
+      const auto register_range = parse_register_range();
+      instr->register_list.insert(instr->register_list.end(),
+                                  register_range.begin(), register_range.end());
+      if (lexer_.token_kind() == token::Comma) {
+        lexer_.get_token();
+      }
+    } else {
+      instr->register_list.push_back(lexer_.token_kind());
+      if (lexer_.get_token() == token::Comma) {
+        lexer_.get_token();
+      }
+    }
+  }
+
+  lexer_.get_token();
+
+  instruction = std::move(instr);
+}
+
+std::vector<std::unique_ptr<ir::Instruction>> Parser::parse_instructions() {
+  auto instructions = std::vector<std::unique_ptr<ir::Instruction>>{};
+
+  while (lexer_.token_kind() != token::Eof) {
+    instructions.push_back(parse_instruction());
+  }
+
+  return instructions;
+}

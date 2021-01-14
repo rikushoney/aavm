@@ -122,6 +122,13 @@ struct SingleMemoryInstruction : public Instruction {
   SingleMemoryInstruction(const Instruction &other) : Instruction{other} {}
 };
 
+struct MultipleMemoryInstruction : public Instruction {
+  register_type rn;
+  std::vector<register_type> register_list;
+  bool writeback;
+  MultipleMemoryInstruction(const Instruction &other) : Instruction{other} {}
+};
+
 } // namespace ir
 } // namespace aavm
 

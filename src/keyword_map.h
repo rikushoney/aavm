@@ -1,6 +1,7 @@
 #ifndef AAVM_KEYWORD_MAP_H
 #define AAVM_KEYWORD_MAP_H
 
+#include "array.h"
 #include "character.h"
 #include "token.h"
 
@@ -13,16 +14,6 @@
 namespace aavm::parser::keyword {
 
 namespace detail {
-
-template <typename T, std::size_t... I>
-constexpr auto make_array_impl(T (&a)[sizeof...(I)], std::index_sequence<I...>)
-    -> std::array<T, sizeof...(I)> {
-  return {{std::move(a[I])...}};
-}
-
-template <typename T, std::size_t N> constexpr auto make_array(T(&&a)[N]) {
-  return make_array_impl(a, std::make_index_sequence<N>{});
-}
 
 constexpr auto gen_keyword_map() {
   using namespace std::string_view_literals;
