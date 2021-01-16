@@ -9,9 +9,12 @@
 using namespace aavm::parser;
 
 Lexer::Lexer(const Charbuffer &buffer)
-    : buffer_{buffer}, buffer_cursor_{buffer_.begin()}, line_number_{1} {
+    : buffer_{buffer}, buffer_cursor_{buffer_.begin()}, line_number_{0},
+      column_number_{0} {
   // prime the first character
   next_char();
+  line_number_ = 1;
+  column_number_ = 1;
 }
 
 void Lexer::lex_identifier(token::Kind &tok) {
@@ -133,7 +136,6 @@ void Lexer::lex_token(token::Kind &tok) {
       continue;
     case '\n':
       tok = token::Newline;
-      ++line_number_;
       break;
     case ',':
       tok = token::Comma;
@@ -173,7 +175,6 @@ void Lexer::lex_token(token::Kind &tok) {
         // just skip everything until we reach end of line
       }
       tok = token::Newline;
-      ++line_number_;
       break;
     default:
       if (is_alpha(cur_char_)) {

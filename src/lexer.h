@@ -12,10 +12,19 @@
 
 namespace aavm::parser {
 
+struct SourceLocation {
+  using size_type = std::size_t;
+
+  size_type line_number;
+  size_type column_number;
+  Charbuffer::iterator text;
+};
+
 class Lexer {
 public:
   using string_type = std::string_view;
   using int_type = std::int64_t;
+  using size_type = std::size_t;
 
   Lexer(const Charbuffer &buffer);
 
@@ -41,6 +50,10 @@ public:
     return tok;
   }
 
+  auto source_location() const {
+    return SourceLocation{line_number_, column_number_, buffer_cursor_};
+  }
+
   auto token_kind() const { return kind_; }
 
   auto string_value() const { return string_value_; }
@@ -48,7 +61,17 @@ public:
   auto int_value() const { return int_value_; }
 
 private:
-  auto next_char() { return cur_char_ = *buffer_cursor_++; }
+  auto next_char() {
+    cur_char_ = *buffer_cursor_++;
+    if (cur_char_ == '\n') {
+      ++line_number_;
+      column_number_ = 0;
+    } else {
+      ++column_number_;
+    }
+
+    return cur_char_;
+  }
 
   void lex_token(token::Kind &tok);
   void lex_identifier(token::Kind &tok);
@@ -57,7 +80,8 @@ private:
   const Charbuffer &buffer_;
   Charbuffer::iterator buffer_cursor_;
   char cur_char_;
-  int_type line_number_;
+  size_type line_number_;
+  size_type column_number_;
 
   token::Kind kind_;
   string_type string_value_;
