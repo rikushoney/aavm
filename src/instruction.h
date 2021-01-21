@@ -5,6 +5,7 @@
 #include "token.h"
 
 #include <cstdint>
+#include <memory>
 #include <variant>
 
 namespace aavm {
@@ -20,25 +21,26 @@ class Instruction {
 
 public:
   using int_type = std::int32_t;
-  using opcode_type = parser::token::Kind;
+  using opcode_type = std::uint32_t;
+  using operation_type = parser::token::Kind;
   using condition_type = parser::token::Kind;
   using register_type = parser::token::Kind;
-  constexpr Instruction(opcode_type op, condition_type cond, bool update)
+
+  constexpr Instruction(operation_type op, condition_type cond, bool update)
       : op_{op}, cond_{cond}, update_{update} {}
 
   constexpr Instruction(const Instruction &other)
       : op_{other.op_}, cond_{other.cond_}, update_{other.update_} {}
 
-  constexpr opcode_type opcode() const { return op_; }
+  constexpr operation_type operation() const { return op_; }
   constexpr condition_type condition() const { return cond_; }
   constexpr bool updates_flags() const { return update_; }
 
-  static constexpr auto is_arithmetic_instruction(opcode_type opcode) {
-    return parser::token::is_arithmetic_instruction(opcode);
-  }
+  virtual opcode_type encode() const;
+  static std::unique_ptr<Instruction> decode(opcode_type opcode);
 
 private:
-  opcode_type op_;
+  operation_type op_;
   condition_type cond_;
   bool update_;
 };
@@ -49,6 +51,7 @@ struct ArithmeticInstruction : public Instruction {
   Operand2 src2;
 
   ArithmeticInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct MultiplyInstruction : public Instruction {
@@ -60,6 +63,7 @@ struct MultiplyInstruction : public Instruction {
   register_type rdhi;
 
   MultiplyInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct DivideInstruction : public Instruction {
@@ -68,6 +72,7 @@ struct DivideInstruction : public Instruction {
   register_type rm;
 
   DivideInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct MoveInstruction : public Instruction {
@@ -77,6 +82,7 @@ struct MoveInstruction : public Instruction {
   source_variant src;
 
   MoveInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct CompareInstruction : public Instruction {
@@ -84,6 +90,7 @@ struct CompareInstruction : public Instruction {
   Operand2 src2;
 
   CompareInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct BitfieldInstruction : public Instruction {
@@ -93,6 +100,7 @@ struct BitfieldInstruction : public Instruction {
   int_type width;
 
   BitfieldInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct ReverseInstruction : public Instruction {
@@ -100,6 +108,7 @@ struct ReverseInstruction : public Instruction {
   register_type rm;
 
   ReverseInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct BranchInstruction : public Instruction {
@@ -109,6 +118,7 @@ struct BranchInstruction : public Instruction {
   register_type rn;
 
   BranchInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct SingleMemoryInstruction : public Instruction {
@@ -119,6 +129,7 @@ struct SingleMemoryInstruction : public Instruction {
   enum class IndexMode { Post, Offset, Pre } indexmode;
 
   SingleMemoryInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 struct MultipleMemoryInstruction : public Instruction {
@@ -126,6 +137,7 @@ struct MultipleMemoryInstruction : public Instruction {
   std::vector<register_type> register_list;
   bool writeback;
   MultipleMemoryInstruction(const Instruction &other) : Instruction{other} {}
+  opcode_type encode() const override;
 };
 
 } // namespace ir

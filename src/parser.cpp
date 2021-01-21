@@ -212,26 +212,27 @@ void Parser::parse_multiply_instruction(
   auto instr = std::make_unique<ir::MultiplyInstruction>(*instruction.get());
 
   const auto register_count =
-      instruction->opcode() == ir::Instruction::opcode_type::OP_mul ? 3 : 4;
+      instruction->operation() == ir::Instruction::operation_type::OP_mul ? 3
+                                                                          : 4;
 
   const auto registers = parse_register_list(register_count);
   if (registers.size() < register_count) {
     assert(false && "not enough registers");
   }
 
-  switch (instr->opcode()) {
-  case ir::Instruction::opcode_type::OP_mla:
-  case ir::Instruction::opcode_type::OP_mls:
+  switch (instr->operation()) {
+  case ir::Instruction::operation_type::OP_mla:
+  case ir::Instruction::operation_type::OP_mls:
     instr->rn = registers[3];
-  case ir::Instruction::opcode_type::OP_mul:
+  case ir::Instruction::operation_type::OP_mul:
     instr->rd = registers[0];
     instr->rm = registers[1];
     instr->rs = registers[2];
     break;
-  case ir::Instruction::opcode_type::OP_umull:
-  case ir::Instruction::opcode_type::OP_smull:
-  case ir::Instruction::opcode_type::OP_umlal:
-  case ir::Instruction::opcode_type::OP_smlal:
+  case ir::Instruction::operation_type::OP_umull:
+  case ir::Instruction::operation_type::OP_smull:
+  case ir::Instruction::operation_type::OP_umlal:
+  case ir::Instruction::operation_type::OP_smlal:
     instr->rdlo = registers[0];
     instr->rdhi = registers[1];
     instr->rm = registers[2];
@@ -269,15 +270,15 @@ void Parser::parse_move_instruction(
   ensure(token::is_register, "expected register"sv);
   ensure(token::Comma, "expected comma"sv);
 
-  switch (instr->opcode()) {
-  case ir::Instruction::opcode_type::OP_mov:
-  case ir::Instruction::opcode_type::OP_mvn: {
+  switch (instr->operation()) {
+  case ir::Instruction::operation_type::OP_mov:
+  case ir::Instruction::operation_type::OP_mvn: {
     const auto op2 = parse_operand2();
     instr->src = op2;
     break;
   }
-  case ir::Instruction::opcode_type::OP_movt:
-  case ir::Instruction::opcode_type::OP_movw: {
+  case ir::Instruction::operation_type::OP_movt:
+  case ir::Instruction::operation_type::OP_movw: {
     const auto val = parse_immediate_value();
     ensure(token::Integer, "expected imm16"sv);
     if (val < 0 || val > 65535) {
@@ -305,7 +306,7 @@ void Parser::parse_shift_instruction(
   instr->rd = registers[0];
   auto src = ir::ShiftedRegister{};
   src.rm = registers[1];
-  src.op = instr->opcode();
+  src.op = instr->operation();
 
   expect(token::Comma, "expected comma"sv);
 
@@ -321,7 +322,7 @@ void Parser::parse_shift_instruction(
   auto op2 = ir::Operand2{};
   op2.operand = src;
   instr->src = op2;
-  instr->op_ = ir::Instruction::opcode_type::OP_mov;
+  instr->op_ = ir::Instruction::operation_type::OP_mov;
 
   instruction = std::move(instr);
 }
@@ -345,7 +346,7 @@ void Parser::parse_bitfield_instruction(
   auto instr = std::make_unique<ir::BitfieldInstruction>(*instruction.get());
 
   const auto has_rn =
-      instruction->opcode() != ir::Instruction::opcode_type::OP_bfc;
+      instruction->operation() != ir::Instruction::operation_type::OP_bfc;
 
   const auto register_count = has_rn ? 2 : 1;
 
@@ -386,14 +387,14 @@ void Parser::parse_branch_instruction(
     std::unique_ptr<ir::Instruction> &instruction) {
   auto instr = std::make_unique<ir::BranchInstruction>(*instruction.get());
 
-  switch (instruction->opcode()) {
-  case ir::Instruction::opcode_type::OP_cbz:
-  case ir::Instruction::opcode_type::OP_cbnz: {
+  switch (instruction->operation()) {
+  case ir::Instruction::operation_type::OP_cbz:
+  case ir::Instruction::operation_type::OP_cbnz: {
     instr->rn = lexer_.token_kind();
     ensure(token::is_register, "expected register"sv);
     break;
   }
-  case ir::Instruction::opcode_type::OP_bx: {
+  case ir::Instruction::operation_type::OP_bx: {
     instr->rm = lexer_.token_kind();
     ensure(token::is_register, "expected register"sv);
     break;
@@ -402,7 +403,7 @@ void Parser::parse_branch_instruction(
     break;
   }
 
-  if (instruction->opcode() != ir::Instruction::opcode_type::OP_bx) {
+  if (instruction->operation() != ir::Instruction::operation_type::OP_bx) {
     if (lexer_.token_kind() == token::Label) {
       instr->target = lexer_.string_value();
       lexer_.get_token();
@@ -427,12 +428,12 @@ void Parser::parse_single_memory_instruction(
 
   if (lexer_.token_kind() == token::Equal) {
     if (immediate_follows(lexer_.get_token())) {
-      if (instr->opcode() != token::OP_ldr) {
+      if (instr->operation() != token::OP_ldr) {
         assert(false && "only ldr is supported");
       }
       instr->source = parse_immediate_value();
     } else {
-      if (!is_single_memory_load_instruction(instr->opcode())) {
+      if (!is_single_memory_load_instruction(instr->operation())) {
         assert(false && "only ldr-like instructions are supported");
       }
       instr->source = lexer_.string_value();
