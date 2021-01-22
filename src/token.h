@@ -182,56 +182,6 @@ constexpr auto is_instruction(Kind kind) {
   return kind >= Kind::instructions_start_ && kind <= Kind::instructions_end_;
 }
 
-constexpr auto is_arithmetic_instruction(Kind kind) {
-  return kind >= Kind::arithmetic_instructions_start_ &&
-         kind <= Kind::arithmetic_instructions_end_;
-}
-
-constexpr auto is_shift_instruction(Kind kind) {
-  return kind >= Kind::shift_instructions_start_ &&
-         kind <= Kind::shift_instructions_end_;
-}
-
-constexpr auto is_multiply_instruction(Kind kind) {
-  return kind >= Kind::multiply_instructions_start_ &&
-         kind <= Kind::multiply_instructions_end_;
-}
-
-constexpr auto is_divide_instruction(Kind kind) {
-  return kind >= Kind::divide_instructions_start_ &&
-         kind <= Kind::divide_instructions_end_;
-}
-
-constexpr auto is_move_instruction(Kind kind) {
-  return kind >= Kind::move_instructions_start_ &&
-         kind <= Kind::move_instructions_end_;
-}
-
-constexpr auto is_comparison_instruction(Kind kind) {
-  return kind >= Kind::comparison_instructions_start_ &&
-         kind <= Kind::comparison_instructions_end_;
-}
-
-constexpr auto is_bitfield_instruction(Kind kind) {
-  return kind >= Kind::bitfield_instructions_start_ &&
-         kind <= Kind::bitfield_instructions_end_;
-}
-
-constexpr auto is_reverse_instruction(Kind kind) {
-  return kind >= Kind::reverse_instructions_start_ &&
-         kind <= Kind::reverse_instructions_end_;
-}
-
-constexpr auto is_branch_instruction(Kind kind) {
-  return kind >= Kind::branch_instructions_start_ &&
-         kind <= Kind::branch_instructions_end_;
-}
-
-constexpr auto is_single_memory_instruction(Kind kind) {
-  return kind >= Kind::single_memory_instructions_start_ &&
-         kind <= Kind::single_memory_instructions_end_;
-}
-
 } // namespace aavm::token
 
 #endif
