@@ -219,7 +219,7 @@ constexpr auto is_bitfield_instruction(Kind kind) {
 
 constexpr auto is_reverse_instruction(Kind kind) {
   return kind >= Kind::reverse_instructions_start_ &&
-         kind <= Kind::bitfield_instructions_end_;
+         kind <= Kind::reverse_instructions_end_;
 }
 
 constexpr auto is_branch_instruction(Kind kind) {
