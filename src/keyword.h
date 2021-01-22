@@ -63,6 +63,10 @@ template <typename Pred> constexpr auto find(Pred &&predicate) {
   return none;
 }
 
+constexpr auto find(std::string_view keyword) {
+  return find([keyword](const auto key) { return keyword == key; });
+}
+
 } // namespace aavm::keyword
 
 #endif
