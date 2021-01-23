@@ -27,26 +27,26 @@ public:
   Lexer(Charbuffer &text)
       : text_{text}, cursor_{text_.begin()}, current_char_{0},
         column_number_{1}, line_number_{1}, current_token_{token::Error},
-        int_value_{0}, string_value_{} {
+        int_value_{0}, string_value_{}, saved_states_{} {
     // prime the first character
     get_char();
   }
 
-  auto kind() const { return current_token_; }
-  auto int_value() const { return int_value_; }
-  auto string_value() const { return string_value_; }
+  constexpr auto kind() const { return current_token_; }
+  constexpr auto int_value() const { return int_value_; }
+  constexpr auto string_value() const { return string_value_; }
 
-  auto source_location() const {
+  constexpr auto source_location() const {
     return SourceLocation{column_number_, line_number_, cursor_};
   }
 
-  auto set_state(LexerState state) {
+  constexpr auto set_state(LexerState state) {
     current_token_ = state.token;
     int_value_ = state.int_value;
     string_value_ = state.string_value;
   }
 
-  auto save_state() const {
+  constexpr auto save_state() const {
     return LexerState{current_token_, int_value_, string_value_};
   }
 
@@ -79,7 +79,7 @@ public:
   }
 
 private:
-  int get_char() {
+  constexpr int get_char() {
     current_char_ = *cursor_++;
     if (current_char_ == '\n') {
       ++line_number_;
@@ -91,6 +91,8 @@ private:
   }
 
   token::Kind lex_token();
+  token::Kind lex_integer();
+  token::Kind lex_identifier();
 
   const Charbuffer &text_;
   Charbuffer::iterator cursor_;
