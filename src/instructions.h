@@ -2,30 +2,79 @@
 #define AAVM_IR_INSTRUCTIONS_H_
 
 #include "instruction.h"
+#include "label.h"
+#include "operand2.h"
+#include "register.h"
+#include <vector>
 
 namespace aavm::ir {
 
-struct ArithmeticInstruction : public Instruction {};
+struct ArithmeticInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rn;
+  Operand2 src2;
+};
 
-struct ShiftInstruction : public Instruction {};
+struct MultiplyInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rm;
+  Register::Kind rs;
+  Register::Kind rn;
+  Register::Kind rdlo;
+  Register::Kind rdhi;
+};
 
-struct MultiplyInstruction : public Instruction {};
+struct DivideInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rn;
+  Register::Kind rm;
+};
 
-struct DivideInstruction : public Instruction {};
+struct MoveInstruction : public Instruction {
+  Register::Kind rd;
+  Operand2 src2;
+  unsigned imm16;
+};
 
-struct MoveInstruction : public Instruction {};
+struct ComparisonInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rn;
+  Operand2 src2;
+};
 
-struct ComparisonInstruction : public Instruction {};
+struct BitfieldInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rn;
+  unsigned lsb;
+  unsigned width;
+};
 
-struct BitfieldInstruction : public Instruction {};
+struct ReverseInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rm;
+};
 
-struct ReverseInstruction : public Instruction {};
+struct BranchInstruction : public Instruction {
+  Register::Kind rm;
+  Register::Kind rn;
+  LabelID label;
+};
 
-struct BranchInstruction : public Instruction {};
+struct SingleMemoryInstruction : public Instruction {
+  Register::Kind rd;
+  Register::Kind rn;
+  enum IndexMode { PostIndex, Offset, PreIndex } index_mode;
+  bool subtract;
+  Operand2 src2;
+  LabelID label;
+  unsigned imm32;
+};
 
-struct SingleMemoryInstruction : public Instruction {};
-
-struct BlockMemoryInstruction : public Instruction {};
+struct BlockMemoryInstruction : public Instruction {
+  Register::Kind rn;
+  bool writeback;
+  std::vector<Register::Kind> register_list;
+};
 
 } // namespace aavm::ir
 

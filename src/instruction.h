@@ -17,9 +17,9 @@ public:
 
   auto updatesflags() const { return updates_; }
 
-  enum ArithmeticOperations {
+  enum ArithmeticOperation {
     arithmetic_operations_start_ = 1,
-    Add = arithmetic_operations_start_,
+    Add = 1,
     Adc = 2,
     Sub = 3,
     Sbc = 4,
@@ -30,86 +30,86 @@ public:
     Orr = 9,
     Bic = 10,
     Adr = 11,
-    arithmetic_operations_end_ = Adr
+    arithmetic_operations_end_ = 11
   };
 
-  enum ShiftOperations {
-    shift_operations_start_ = arithmetic_operations_end_ + 1,
+  enum ShiftOperation {
+    shift_operations_start_ = 12,
     Asr = 12,
     Lsl = 13,
     Lsr = 14,
     Ror = 15,
     Rrx = 16,
-    shift_operations_end_ = Rrx
+    shift_operations_end_ = 16
   };
 
-  enum MultiplyOperations {
-    multiply_operations_start_ = shift_operations_end_ + 1,
-    Mul = multiply_operations_start_,
+  enum MultiplyOperation {
+    multiply_operations_start_ = 17,
+    Mul = 17,
     Mla = 18,
     Mls = 19,
     Umull = 20,
     Umlal = 21,
     Smull = 22,
     Smlal = 23,
-    multiply_operations_end_ = Smlal
+    multiply_operations_end_ = 23
   };
 
-  enum DivideOperations {
-    divide_operations_start_ = multiply_operations_end_ + 1,
-    Sdiv = divide_operations_start_,
+  enum DivideOperation {
+    divide_operations_start_ = 24,
+    Sdiv = 24,
     Udiv = 25,
-    divide_operations_end_ = Udiv
+    divide_operations_end_ = 25
   };
 
-  enum MoveOperations {
-    move_operations_start_ = divide_operations_end_ + 1,
+  enum MoveOperation {
+    move_operations_start_ = 26,
     Mov = 26,
     Mvn = 27,
     Movt = 28,
     Movw = 29,
-    move_operations_end_ = Movw
+    move_operations_end_ = 29
   };
 
-  enum ComparisonOperations {
-    compare_operations_start_ = move_operations_end_ + 1,
+  enum ComparisonOperation {
+    compare_operations_start_ = 30,
     Cmp = 30,
     Cmn = 31,
     Tst = 32,
     Teq = 33,
-    compare_operations_end_ = Teq
+    compare_operations_end_ = 33
   };
 
-  enum BitfieldOperations {
-    bitfield_operations_start_ = compare_operations_end_ + 1,
+  enum BitfieldOperation {
+    bitfield_operations_start_ = 34,
     Bfc = 34,
     Bfi = 35,
     Sbfx = 36,
     Ubfx = 37,
-    bitfield_operations_end_ = Ubfx
+    bitfield_operations_end_ = 37
   };
 
-  enum ReverseOperations {
-    reverse_operations_start_ = bitfield_operations_end_ + 1,
+  enum ReverseOperation {
+    reverse_operations_start_ = 38,
     Rbit = 38,
     Rev = 39,
     Rev16 = 40,
     Revsh = 41,
-    reverse_operations_end_ = Revsh
+    reverse_operations_end_ = 41
   };
 
-  enum BranchOperations {
-    branch_operations_start_ = reverse_operations_end_ + 1,
+  enum BranchOperation {
+    branch_operations_start_ = 42,
     B = 42,
     Bl = 43,
     Bx = 44,
     Cbz = 45,
     Cbnz = 46,
-    branch_operations_end_ = Cbnz
+    branch_operations_end_ = 46
   };
 
-  enum SingleMemoryOperations {
-    single_memory_operations_start_ = branch_operations_end_ + 1,
+  enum SingleMemoryOperation {
+    single_memory_operations_start_ = 47,
     Ldr = 47,
     Ldrb = 48,
     Ldrsb = 49,
@@ -118,11 +118,11 @@ public:
     Str = 52,
     Strb = 53,
     Strh = 54,
-    single_memory_operations_end_ = Strh
+    single_memory_operations_end_ = 54
   };
 
-  enum BlockMemoryOperations {
-    block_memory_operations_start_ = single_memory_operations_end_ + 1,
+  enum BlockMemoryOperation {
+    block_memory_operations_start_ = 55,
     Ldm = 55,
     Ldmia = 56,
     Ldmib = 57,
@@ -135,7 +135,7 @@ public:
     Stmdb = 64,
     Push = 65,
     Pop = 66,
-    block_memory_operations_end_ = Pop
+    block_memory_operations_end_ = 66
   };
 
   constexpr auto is_arithmetic_instruction(unsigned op) {
