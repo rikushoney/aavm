@@ -5,23 +5,7 @@
 
 namespace aavm::ir::condition {
 
-enum Kind {
-  EQ = token::kw_eq,
-  NE = token::kw_ne,
-  CS = token::kw_cs,
-  CC = token::kw_cc,
-  MI = token::kw_mi,
-  PL = token::kw_pl,
-  VS = token::kw_vs,
-  VC = token::kw_vc,
-  HI = token::kw_hi,
-  LS = token::kw_ls,
-  GE = token::kw_ge,
-  LT = token::kw_lt,
-  GT = token::kw_gt,
-  LE = token::kw_le,
-  AL = token::kw_al
-};
+enum Kind { EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL };
 
 } // namespace aavm::ir::condition
 

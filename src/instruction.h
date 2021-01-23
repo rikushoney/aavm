@@ -2,7 +2,6 @@
 #define AAVM_IR_INSTRUCTION_H_
 
 #include "condition.h"
-#include "token.h"
 
 namespace aavm::ir {
 
@@ -19,154 +18,171 @@ public:
   auto updatesflags() const { return updates_; }
 
   enum ArithmeticOperations {
-    Add = token::kw_add,
-    Adc = token::kw_adc,
-    Sub = token::kw_sub,
-    Sbc = token::kw_sbc,
-    Rsb = token::kw_rsb,
-    Rsc = token::kw_rsc,
-    And = token::kw_and,
-    Eor = token::kw_eor,
-    Orr = token::kw_orr,
-    Bic = token::kw_bic,
-    Adr = token::kw_adr
+    arithmetic_operations_start_ = 1,
+    Add = arithmetic_operations_start_,
+    Adc = 2,
+    Sub = 3,
+    Sbc = 4,
+    Rsb = 5,
+    Rsc = 6,
+    And = 7,
+    Eor = 8,
+    Orr = 9,
+    Bic = 10,
+    Adr = 11,
+    arithmetic_operations_end_ = Adr
   };
 
   enum ShiftOperations {
-    Asr = token::kw_asr,
-    Lsl = token::kw_lsl,
-    Lsr = token::kw_lsr,
-    Ror = token::kw_ror,
-    Rrx = token::kw_rrx
+    shift_operations_start_ = arithmetic_operations_end_ + 1,
+    Asr = 12,
+    Lsl = 13,
+    Lsr = 14,
+    Ror = 15,
+    Rrx = 16,
+    shift_operations_end_ = Rrx
   };
 
   enum MultiplyOperations {
-    Mul = token::kw_mul,
-    Mla = token::kw_mla,
-    Mls = token::kw_mls,
-    Umull = token::kw_umull,
-    Umlal = token::kw_umlal,
-    Smull = token::kw_smull,
-    Smlal = token::kw_smlal
+    multiply_operations_start_ = shift_operations_end_ + 1,
+    Mul = multiply_operations_start_,
+    Mla = 18,
+    Mls = 19,
+    Umull = 20,
+    Umlal = 21,
+    Smull = 22,
+    Smlal = 23,
+    multiply_operations_end_ = Smlal
   };
 
-  enum DivideOperations { Sdiv = token::kw_sdiv, Udiv = token::kw_udiv };
+  enum DivideOperations {
+    divide_operations_start_ = multiply_operations_end_ + 1,
+    Sdiv = divide_operations_start_,
+    Udiv = 25,
+    divide_operations_end_ = Udiv
+  };
 
   enum MoveOperations {
-    Mov = token::kw_mov,
-    Mvn = token::kw_mvn,
-    Movt = token::kw_movt,
-    Movw = token::kw_movw
+    move_operations_start_ = divide_operations_end_ + 1,
+    Mov = 26,
+    Mvn = 27,
+    Movt = 28,
+    Movw = 29,
+    move_operations_end_ = Movw
   };
 
   enum ComparisonOperations {
-    Cmp = token::kw_cmp,
-    Cmn = token::kw_cmn,
-    Tst = token::kw_tst,
-    Teq = token::kw_teq
+    compare_operations_start_ = move_operations_end_ + 1,
+    Cmp = 30,
+    Cmn = 31,
+    Tst = 32,
+    Teq = 33,
+    compare_operations_end_ = Teq
   };
 
   enum BitfieldOperations {
-    Bfc = token::kw_bfc,
-    Bfi = token::kw_bfi,
-    Sbfx = token::kw_sbfx,
-    Ubfx = token::kw_ubfx
+    bitfield_operations_start_ = compare_operations_end_ + 1,
+    Bfc = 34,
+    Bfi = 35,
+    Sbfx = 36,
+    Ubfx = 37,
+    bitfield_operations_end_ = Ubfx
   };
 
   enum ReverseOperations {
-    Rbit = token::kw_rbit,
-    Rev = token::kw_rev,
-    Rev16 = token::kw_rev16,
-    Revsh = token::kw_revsh
+    reverse_operations_start_ = bitfield_operations_end_ + 1,
+    Rbit = 38,
+    Rev = 39,
+    Rev16 = 40,
+    Revsh = 41,
+    reverse_operations_end_ = Revsh
   };
 
   enum BranchOperations {
-    B = token::kw_b,
-    Bl = token::kw_bl,
-    Bx = token::kw_bx,
-    Cbz = token::kw_cbz,
-    Cbnz = token::kw_cbnz
+    branch_operations_start_ = reverse_operations_end_ + 1,
+    B = 42,
+    Bl = 43,
+    Bx = 44,
+    Cbz = 45,
+    Cbnz = 46,
+    branch_operations_end_ = Cbnz
   };
 
   enum SingleMemoryOperations {
-    Ldr = token::kw_ldr,
-    Ldrb = token::kw_ldrb,
-    Ldrsb = token::kw_ldrsb,
-    Ldrh = token::kw_ldrh,
-    Ldrsh = token::kw_ldrsh,
-    Str = token::kw_str,
-    Strb = token::kw_strb,
-    Strh = token::kw_strh
+    single_memory_operations_start_ = branch_operations_end_ + 1,
+    Ldr = 47,
+    Ldrb = 48,
+    Ldrsb = 49,
+    Ldrh = 50,
+    Ldrsh = 51,
+    Str = 52,
+    Strb = 53,
+    Strh = 54,
+    single_memory_operations_end_ = Strh
   };
 
   enum BlockMemoryOperations {
-    Ldm = token::kw_ldm,
-    Ldmia = token::kw_ldmia,
-    Ldmib = token::kw_ldmib,
-    Ldmda = token::kw_ldmda,
-    Ldmdb = token::kw_ldmdb,
-    Stm = token::kw_stm,
-    Stmia = token::kw_stmia,
-    Stmib = token::kw_stmib,
-    Stmda = token::kw_stmda,
-    Stmdb = token::kw_stmdb,
-    Push = token::kw_push,
-    Pop = token::kw_pop
+    block_memory_operations_start_ = single_memory_operations_end_ + 1,
+    Ldm = 55,
+    Ldmia = 56,
+    Ldmib = 57,
+    Ldmda = 58,
+    Ldmdb = 59,
+    Stm = 60,
+    Stmia = 61,
+    Stmib = 62,
+    Stmda = 63,
+    Stmdb = 64,
+    Push = 65,
+    Pop = 66,
+    block_memory_operations_end_ = Pop
   };
 
-  constexpr auto is_arithmetic_instruction(unsigned kind) {
-    return kind >= token::Kind::arithmetic_instructions_start_ &&
-           kind <= token::Kind::arithmetic_instructions_end_;
+  constexpr auto is_arithmetic_instruction(unsigned op) {
+    return op >= arithmetic_operations_start_ &&
+           op <= arithmetic_operations_end_;
   }
 
-  constexpr auto is_shift_instruction(unsigned kind) {
-    return kind >= token::Kind::shift_instructions_start_ &&
-           kind <= token::Kind::shift_instructions_end_;
+  constexpr auto is_shift_instruction(unsigned op) {
+    return op >= shift_operations_start_ && op <= shift_operations_end_;
   }
 
-  constexpr auto is_multiply_instruction(unsigned kind) {
-    return kind >= token::Kind::multiply_instructions_start_ &&
-           kind <= token::Kind::multiply_instructions_end_;
+  constexpr auto is_multiply_instruction(unsigned op) {
+    return op >= multiply_operations_start_ && op <= multiply_operations_end_;
   }
 
-  constexpr auto is_divide_instruction(unsigned kind) {
-    return kind >= token::Kind::divide_instructions_start_ &&
-           kind <= token::Kind::divide_instructions_end_;
+  constexpr auto is_divide_instruction(unsigned op) {
+    return op >= divide_operations_start_ && op <= divide_operations_end_;
   }
 
-  constexpr auto is_move_instruction(unsigned kind) {
-    return kind >= token::Kind::move_instructions_start_ &&
-           kind <= token::Kind::move_instructions_end_;
+  constexpr auto is_move_instruction(unsigned op) {
+    return op >= move_operations_start_ && op <= move_operations_end_;
   }
 
-  constexpr auto is_comparison_instruction(unsigned kind) {
-    return kind >= token::Kind::comparison_instructions_start_ &&
-           kind <= token::Kind::comparison_instructions_end_;
+  constexpr auto is_comparison_instruction(unsigned op) {
+    return op >= compare_operations_start_ && op <= compare_operations_end_;
   }
 
-  constexpr auto is_bitfield_instruction(unsigned kind) {
-    return kind >= token::Kind::bitfield_instructions_start_ &&
-           kind <= token::Kind::bitfield_instructions_end_;
+  constexpr auto is_bitfield_instruction(unsigned op) {
+    return op >= bitfield_operations_start_ && op <= bitfield_operations_end_;
   }
 
-  constexpr auto is_reverse_instruction(unsigned kind) {
-    return kind >= token::Kind::reverse_instructions_start_ &&
-           kind <= token::Kind::reverse_instructions_end_;
+  constexpr auto is_reverse_instruction(unsigned op) {
+    return op >= reverse_operations_start_ && op <= reverse_operations_end_;
   }
 
-  constexpr auto is_branch_instruction(unsigned kind) {
-    return kind >= token::Kind::branch_instructions_start_ &&
-           kind <= token::Kind::branch_instructions_end_;
+  constexpr auto is_branch_instruction(unsigned op) {
+    return op >= branch_operations_start_ && op <= branch_operations_end_;
   }
 
-  constexpr auto is_single_memory_instruction(unsigned kind) {
-    return kind >= token::Kind::single_memory_instructions_start_ &&
-           kind <= token::Kind::single_memory_instructions_end_;
+  constexpr auto is_single_memory_instruction(unsigned op) {
+    return op >= single_memory_operations_start_ &&
+           op <= single_memory_operations_end_;
   }
 
-  constexpr auto is_block_memory_instruction(unsigned kind) {
-    return kind >= token::Kind::block_memory_instructions_start_ &&
-           kind <= token::Kind::block_memory_instructions_end_;
+  constexpr auto is_block_memory_instruction(unsigned op) {
+    return op >= block_memory_operations_start_ &&
+           op <= block_memory_operations_end_;
   }
 
 private:

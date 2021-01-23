@@ -2,6 +2,7 @@
 #define AAVM_HELPERS_H_
 
 #include <array>
+#include <cstddef>
 #include <utility>
 
 namespace aavm {

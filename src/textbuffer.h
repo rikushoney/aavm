@@ -12,8 +12,8 @@ namespace detail_ {
 template <typename Istream> auto read_stream_into_vector_(Istream &instream) {
   constexpr auto chunk_size = sizeof(unsigned int) * 32u;
   using char_type = typename Istream::char_type;
-  auto vec = std::vector<char_type>{};
-  auto buffer = std::array<char_type, chunk_size>{};
+  auto vec = std::vector<char_type>();
+  auto buffer = std::array<char_type, chunk_size>();
 
   const auto buffer_start = buffer.begin();
 
@@ -46,9 +46,8 @@ public:
 
   auto end() const { return container_.end(); }
 
-  auto view(iterator first, iterator last)
-      -> std::basic_string_view<value_type> const {
-    return {&(*first), static_cast<size_type>(last - first)};
+  auto view(iterator first, iterator last) const {
+    return std::string_view(&(*first), static_cast<size_type>(last - first));
   }
 
   template <typename Ostream> auto dump(Ostream &outstream) const {
