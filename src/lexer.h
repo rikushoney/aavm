@@ -32,7 +32,7 @@ public:
     get_char();
   }
 
-  constexpr auto kind() const { return current_token_; }
+  constexpr auto token_kind() const { return current_token_; }
   constexpr auto int_value() const { return int_value_; }
   constexpr auto string_value() const { return string_value_; }
 

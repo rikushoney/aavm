@@ -25,7 +25,8 @@ enum Kind {
 
   UpdateFlag,
 
-  kw_eq,
+  conditions_start_,
+  kw_eq = conditions_start_,
   kw_ne,
   kw_cs,
   kw_cc,
@@ -40,8 +41,10 @@ enum Kind {
   kw_gt,
   kw_le,
   kw_al,
+  conditions_end_ = kw_al,
 
-  kw_r0,
+  registers_start_,
+  kw_r0 = registers_start_,
   kw_r1,
   kw_r2,
   kw_r3,
@@ -60,8 +63,10 @@ enum Kind {
   kw_sp,
   kw_lr,
   kw_pc,
+  registers_end_ = kw_pc,
 
-  kw_nop,
+  instructions_start_,
+  kw_nop = instructions_start_,
 
   kw_add,
   kw_adc,
@@ -138,8 +143,21 @@ enum Kind {
   kw_stmda,
   kw_stmdb,
   kw_push,
-  kw_pop
+  kw_pop,
+  instructions_end_ = kw_pop
 };
+
+constexpr auto is_condition(token::Kind token) {
+  return token >= conditions_start_ && token <= conditions_end_;
+}
+
+constexpr auto is_register(token::Kind token) {
+  return token >= registers_start_ && token <= registers_end_;
+}
+
+constexpr auto is_instruction(token::Kind token) {
+  return token >= instructions_start_ && token <= instructions_end_;
+}
 
 } // namespace aavm::token
 
