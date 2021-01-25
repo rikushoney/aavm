@@ -3,6 +3,7 @@
 #include "operand2.h"
 #include "register.h"
 #include "token.h"
+#include <memory>
 
 using namespace aavm;
 using namespace aavm::parser;
@@ -323,4 +324,32 @@ std::optional<Operand2> Parser::parse_operand2() {
   }
 
   return src2;
+}
+
+std::unique_ptr<ArithmeticInstruction>
+Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
+  lexer_.get_token();
+  const auto update = lexer_.token_kind() == token::UpdateFlag;
+  if (update) {
+    lexer_.get_token();
+  }
+
+  auto cond = condition::AL;
+  if (token::is_condition(lexer_.token_kind())) {
+    cond = static_cast<condition::Kind>(map_token(lexer_.token_kind()));
+  }
+
+  expect(token::is_register, "expected register"sv);
+  const auto rd = static_cast<Register::Kind>(map_token(lexer_.token_kind()));
+  expect(token::Comma, "expected comma"sv);
+  expect(token::is_register, "expected register"sv);
+  const auto rn = static_cast<Register::Kind>(map_token(lexer_.token_kind()));
+  expect(token::Comma, "expected comma"sv);
+  const auto src2 = parse_operand2();
+  if (!src2) {
+    return {};
+  }
+
+  return std::make_unique<ArithmeticInstruction>(op, cond, update, rd, rn,
+                                                 src2.value());
 }
