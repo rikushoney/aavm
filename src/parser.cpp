@@ -217,7 +217,7 @@ constexpr unsigned map_token(token::Kind token) {
   }
 }
 
-std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
+std::unique_ptr<Instruction> Parser::parse_instruction() {
   const auto tok = lexer_.token_kind();
 
   if (!token::is_instruction(tok)) {
@@ -265,91 +265,202 @@ std::unique_ptr<ir::Instruction> Parser::parse_instruction() {
   }
 
   // return mov r0, r0
-  return {};
+  return std::make_unique<MoveInstruction>(
+      Instruction::Mov, condition::AL, false, Register::Kind::R0,
+      Operand2::shifted_register(Register::Kind::R0));
 }
 
-std::optional<Operand2> Parser::parse_operand2() {
-  auto src2 = Operand2{};
-
-  if (lexer_.token_kind() == token::Numbersym) {
-    lexer_.get_token();
-    const auto negate = lexer_.token_kind() == token::Minus;
-    if (negate) {
-      lexer_.get_token();
-    }
-
-    src2.value = lexer_.int_value();
-    if (!ensure(token::Integer, "expected integer"sv)) {
-      return std::nullopt;
-    }
-
-    if (negate) {
-      // we dont really care that the value is negative (and thus actually
-      // signed) its all up to interpretation in the end
-      src2.value = static_cast<unsigned>(-std::get<unsigned>(src2.value));
-    }
-  } else {
-    const auto rm = static_cast<Register::Kind>(map_token(lexer_.token_kind()));
-    if (!ensure(token::is_register, "expected register or immediate value"sv)) {
-      return std::nullopt;
-    }
-
-    if (lexer_.token_kind() != token::Comma) {
-      src2.value = ShiftedRegister{rm, Instruction::Lsl, 0u};
-      return src2;
-    }
-
-    const auto op = map_token(lexer_.token_kind());
-    if (!ensure(token::is_instruction, "expected shift operation"sv) ||
-        !Instruction::is_shift_instruction(op)) {
-      return std::nullopt;
-    }
-    const auto sh = static_cast<Instruction::ShiftOperation>(op);
-
-    if (lexer_.token_kind() == token::Numbersym) {
-      lexer_.get_token();
-      const auto shamt5 = lexer_.int_value();
-      if (!ensure(token::Integer, "expected positive integer shift"sv)) {
-        return std::nullopt;
-      }
-      src2.value = ShiftedRegister{rm, sh, shamt5};
-    } else {
-      const auto rs = map_token(lexer_.token_kind());
-      if (!ensure(token::is_register,
-                  "expected register or immediate shift value"sv)) {
-        return std::nullopt;
-      }
-      src2.value = ShiftedRegister{rm, sh, static_cast<Register::Kind>(rs)};
-    }
-  }
-
-  return src2;
-}
-
-std::unique_ptr<ArithmeticInstruction>
-Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
-  lexer_.get_token();
+bool Parser::parse_update_flag() {
   const auto update = lexer_.token_kind() == token::UpdateFlag;
   if (update) {
     lexer_.get_token();
   }
 
-  auto cond = condition::AL;
-  if (token::is_condition(lexer_.token_kind())) {
-    cond = static_cast<condition::Kind>(map_token(lexer_.token_kind()));
+  return update;
+}
+
+condition::Kind Parser::parse_condition() {
+  if (is_condition(lexer_.token_kind())) {
+    const auto cond = map_token(lexer_.token_kind());
+    lexer_.get_token();
+    return static_cast<condition::Kind>(cond);
   }
 
-  expect(token::is_register, "expected register"sv);
-  const auto rd = static_cast<Register::Kind>(map_token(lexer_.token_kind()));
-  expect(token::Comma, "expected comma"sv);
-  expect(token::is_register, "expected register"sv);
-  const auto rn = static_cast<Register::Kind>(map_token(lexer_.token_kind()));
-  expect(token::Comma, "expected comma"sv);
-  const auto src2 = parse_operand2();
-  if (!src2) {
+  return condition::AL;
+}
+
+std::optional<unsigned> Parser::parse_immediate() {
+  if (!ensure(token::Numbersym, "expected '#'"sv)) {
+    return std::nullopt;
+  }
+
+  const auto negate = lexer_.token_kind() == token::Minus;
+  if (negate) {
+    lexer_.get_token();
+  }
+
+  const auto imm = lexer_.int_value();
+  if (!ensure(token::Integer, "expected integer"sv)) {
+    return std::nullopt;
+  }
+
+  return negate ? static_cast<unsigned>(-imm) : imm;
+}
+
+std::optional<Register::Kind> Parser::parse_register() {
+  const auto reg = map_token(lexer_.token_kind());
+  if (!ensure(token::is_register, "expected register"sv)) {
+    return std::nullopt;
+  }
+
+  return static_cast<Register::Kind>(reg);
+}
+
+std::optional<Operand2> Parser::parse_operand2() {
+  if (lexer_.token_kind() == token::Numbersym) {
+    const auto imm = parse_immediate();
+    return imm ? std::optional{Operand2::immediate(*imm)} : std::nullopt;
+  }
+
+  const auto rm = parse_register();
+  if (!rm) {
     return {};
   }
 
-  return std::make_unique<ArithmeticInstruction>(op, cond, update, rd, rn,
-                                                 src2.value());
+  if (lexer_.token_kind() == token::Comma) {
+    if (!expect(token::is_instruction, "expected shift operation"sv)) {
+      return {};
+    }
+
+    const auto sh = map_token(lexer_.token_kind());
+    if (!Instruction::is_shift_instruction(sh)) {
+      return {};
+    }
+
+    lexer_.get_token();
+    if (lexer_.token_kind() == token::Numbersym) {
+      const auto shamt5 = parse_immediate();
+      return shamt5 ? std::optional{Operand2::shifted_register(
+                          *rm, static_cast<Instruction::ShiftOperation>(sh),
+                          *shamt5)}
+                    : std::nullopt;
+    } else {
+      const auto rs = parse_register();
+      return rs ? std::optional{Operand2::shifted_register(
+                      *rm, static_cast<Instruction::ShiftOperation>(sh), *rs)}
+                : std::nullopt;
+    }
+  }
+
+  return Operand2::shifted_register(rm.value());
+}
+
+std::unique_ptr<ArithmeticInstruction>
+Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+  const auto updates = parse_update_flag();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return {};
+  }
+  const auto rn = parse_register();
+  if (!rn) {
+    return {};
+  }
+  if (!ensure_comma()) {
+    return {};
+  }
+
+  const auto src2 = parse_operand2();
+  return src2 ? std::make_unique<ArithmeticInstruction>(op, cond, updates, *rd,
+                                                        *rn, *src2)
+              : std::unique_ptr<ArithmeticInstruction>{};
+}
+
+std::unique_ptr<MoveInstruction>
+Parser::parse_shift(Instruction::ShiftOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+  const auto updates = parse_update_flag();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return {};
+  }
+  const auto rm = parse_register();
+  if (!rm) {
+    return {};
+  }
+  if (op == Instruction::Rrx) {
+    return std::make_unique<MoveInstruction>(
+        Instruction::Mov, cond, updates, *rd,
+        Operand2::shifted_register(*rm, op));
+  }
+
+  if (!ensure_comma()) {
+    return {};
+  }
+
+  if (lexer_.token_kind() == token::Numbersym) {
+    const auto shamt5 = parse_immediate();
+    return shamt5 ? std::make_unique<MoveInstruction>(
+                        Instruction::Mov, cond, updates, *rd,
+                        Operand2::shifted_register(*rm, op, *shamt5))
+                  : std::unique_ptr<MoveInstruction>{};
+  }
+
+  const auto rs = parse_register();
+  return rs ? std::make_unique<MoveInstruction>(
+                  Instruction::Mov, cond, updates, *rd,
+                  Operand2::shifted_register(*rm, op, *rs))
+            : std::unique_ptr<MoveInstruction>{};
+}
+
+std::unique_ptr<ir::MultiplyInstruction>
+Parser::parse_multiply(ir::Instruction::MultiplyOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::DivideInstruction>
+Parser::parse_divide(ir::Instruction::DivideOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::MoveInstruction>
+Parser::parse_move(ir::Instruction::MoveOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::ComparisonInstruction>
+Parser::parse_comparison(ir::Instruction::ComparisonOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::BitfieldInstruction>
+Parser::parse_bitfield(ir::Instruction::BitfieldOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::ReverseInstruction>
+Parser::parse_reverse(ir::Instruction::ReverseOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::BranchInstruction>
+Parser::parse_branch(ir::Instruction::BranchOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::SingleMemoryInstruction>
+Parser::parse_single_memory(ir::Instruction::SingleMemoryOperation op) {
+  return {};
+}
+
+std::unique_ptr<ir::BlockMemoryInstruction>
+Parser::parse_block_memory(ir::Instruction::BlockMemoryOperation op) {
+  return {};
 }

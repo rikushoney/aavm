@@ -5,6 +5,7 @@
 #include "instructions.h"
 #include "lexer.h"
 #include "operand2.h"
+#include "register.h"
 #include "textbuffer.h"
 #include <memory>
 #include <optional>
@@ -53,6 +54,15 @@ private:
     return expect([token](const auto tok) { return token == tok; }, message);
   }
 
+  constexpr auto ensure_comma() {
+    using namespace std::string_view_literals;
+    return ensure(token::Comma, "expected comma"sv);
+  }
+
+  bool parse_update_flag();
+  ir::condition::Kind parse_condition();
+  std::optional<unsigned> parse_immediate();
+  std::optional<ir::Register::Kind> parse_register();
   std::optional<ir::Operand2> parse_operand2();
 
   std::unique_ptr<ir::ArithmeticInstruction>

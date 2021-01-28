@@ -18,9 +18,10 @@ struct Operand2 {
 
   static constexpr auto immediate(unsigned imm) { return Operand2{imm}; }
 
-  static constexpr auto shifted_register(Register::Kind rm,
-                                         Instruction::ShiftOperation sh,
-                                         unsigned shamt5) {
+  static constexpr auto
+  shifted_register(Register::Kind rm,
+                   Instruction::ShiftOperation sh = Instruction::Lsl,
+                   unsigned shamt5 = 0) {
     return Operand2{ShiftedRegister{rm, sh, shamt5}};
   }
 
