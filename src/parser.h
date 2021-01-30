@@ -61,7 +61,7 @@ private:
 
   bool parse_update_flag();
   ir::condition::Kind parse_condition();
-  std::optional<unsigned> parse_immediate();
+  std::optional<unsigned> parse_immediate(bool numbersym);
   std::optional<ir::Register::Kind> parse_register();
   std::optional<ir::Operand2> parse_operand2();
 

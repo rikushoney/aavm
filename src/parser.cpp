@@ -289,8 +289,8 @@ condition::Kind Parser::parse_condition() {
   return condition::AL;
 }
 
-std::optional<unsigned> Parser::parse_immediate() {
-  if (!ensure(token::Numbersym, "expected '#'"sv)) {
+std::optional<unsigned> Parser::parse_immediate(bool numbersym) {
+  if (numbersym && !ensure(token::Numbersym, "expected '#'"sv)) {
     return std::nullopt;
   }
 
@@ -318,28 +318,28 @@ std::optional<Register::Kind> Parser::parse_register() {
 
 std::optional<Operand2> Parser::parse_operand2() {
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto imm = parse_immediate();
+    const auto imm = parse_immediate(/* numbersym */ true);
     return imm ? std::optional{Operand2::immediate(*imm)} : std::nullopt;
   }
 
   const auto rm = parse_register();
   if (!rm) {
-    return {};
+    return std::nullopt;
   }
 
   if (lexer_.token_kind() == token::Comma) {
     if (!expect(token::is_instruction, "expected shift operation"sv)) {
-      return {};
+      return std::nullopt;
     }
 
     const auto sh = map_token(lexer_.token_kind());
     if (!Instruction::is_shift_instruction(sh)) {
-      return {};
+      return std::nullopt;
     }
 
     lexer_.get_token();
     if (lexer_.token_kind() == token::Numbersym) {
-      const auto shamt5 = parse_immediate();
+      const auto shamt5 = parse_immediate(/* numbersym */ true);
       return shamt5 ? std::optional{Operand2::shifted_register(
                           *rm, static_cast<Instruction::ShiftOperation>(sh),
                           *shamt5)}
@@ -359,41 +359,41 @@ std::unique_ptr<ArithmeticInstruction>
 Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
   const auto updates = parse_update_flag();
+  const auto cond = parse_condition();
 
   const auto rd = parse_register();
   if (!rd || !ensure_comma()) {
-    return {};
+    return nullptr;
   }
   const auto rn = parse_register();
   if (!rn) {
-    return {};
+    return nullptr;
   }
   if (!ensure_comma()) {
-    return {};
+    return nullptr;
   }
 
   const auto src2 = parse_operand2();
   return src2 ? std::make_unique<ArithmeticInstruction>(op, cond, updates, *rd,
                                                         *rn, *src2)
-              : std::unique_ptr<ArithmeticInstruction>{};
+              : nullptr;
 }
 
 std::unique_ptr<MoveInstruction>
 Parser::parse_shift(Instruction::ShiftOperation op) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
   const auto updates = parse_update_flag();
+  const auto cond = parse_condition();
 
   const auto rd = parse_register();
   if (!rd || !ensure_comma()) {
-    return {};
+    return nullptr;
   }
   const auto rm = parse_register();
   if (!rm) {
-    return {};
+    return nullptr;
   }
   if (op == Instruction::Rrx) {
     return std::make_unique<MoveInstruction>(
@@ -402,65 +402,390 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
   }
 
   if (!ensure_comma()) {
-    return {};
+    return nullptr;
   }
 
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto shamt5 = parse_immediate();
+    const auto shamt5 = parse_immediate(/* numbersym */ true);
     return shamt5 ? std::make_unique<MoveInstruction>(
                         Instruction::Mov, cond, updates, *rd,
                         Operand2::shifted_register(*rm, op, *shamt5))
-                  : std::unique_ptr<MoveInstruction>{};
+                  : nullptr;
   }
 
   const auto rs = parse_register();
   return rs ? std::make_unique<MoveInstruction>(
                   Instruction::Mov, cond, updates, *rd,
                   Operand2::shifted_register(*rm, op, *rs))
-            : std::unique_ptr<MoveInstruction>{};
+            : nullptr;
 }
 
-std::unique_ptr<ir::MultiplyInstruction>
-Parser::parse_multiply(ir::Instruction::MultiplyOperation op) {
-  return {};
+std::unique_ptr<MultiplyInstruction>
+Parser::parse_multiply(Instruction::MultiplyOperation op) {
+  lexer_.get_token();
+
+  const auto updates = parse_update_flag();
+  if (updates && op == Instruction::Mls) {
+    return nullptr;
+  }
+  const auto cond = parse_condition();
+
+  switch (op) {
+  case Instruction::Mul:
+  case Instruction::Mla:
+  case Instruction::Mls: {
+    const auto rd = parse_register();
+    if (!rd || !ensure_comma()) {
+      break;
+    }
+    const auto rm = parse_register();
+    if (!rm || !ensure_comma()) {
+      break;
+    }
+    const auto rs = parse_register();
+
+    if (op == Instruction::Mul) {
+      return rs ? std::make_unique<MultiplyInstruction>(op, cond, updates, *rd,
+                                                        *rm, *rs)
+                : nullptr;
+    }
+
+    if (!rs || !ensure_comma()) {
+      break;
+    }
+    const auto rn = parse_register();
+    if (!rn || !ensure_comma()) {
+      break;
+    }
+
+    return rn ? std::make_unique<MultiplyInstruction>(op, cond, updates, *rs,
+                                                      *rm, *rs, *rn)
+              : nullptr;
+  }
+  case Instruction::Umull:
+  case Instruction::Smull:
+  case Instruction::Umlal:
+  case Instruction::Smlal: {
+    const auto rdlo = parse_register();
+    if (!rdlo || !ensure_comma()) {
+      break;
+    }
+    const auto rdhi = parse_register();
+    if (!rdhi || !ensure_comma()) {
+      break;
+    }
+    const auto rm = parse_register();
+    if (!rm || !ensure_comma()) {
+      break;
+    }
+    const auto rs = parse_register();
+
+    return rs ? std::make_unique<MultiplyInstruction>(
+                    op, cond, updates, std::pair{*rdlo, *rdhi}, *rm, *rs)
+              : nullptr;
+  }
+  default:
+    break;
+  }
+
+  return nullptr;
 }
 
-std::unique_ptr<ir::DivideInstruction>
-Parser::parse_divide(ir::Instruction::DivideOperation op) {
-  return {};
+std::unique_ptr<DivideInstruction>
+Parser::parse_divide(Instruction::DivideOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto rn = parse_register();
+  if (!rn || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto rm = parse_register();
+
+  return rm ? std::make_unique<DivideInstruction>(op, cond, *rd, *rn, *rm)
+            : nullptr;
 }
 
-std::unique_ptr<ir::MoveInstruction>
-Parser::parse_move(ir::Instruction::MoveOperation op) {
-  return {};
+std::unique_ptr<MoveInstruction>
+Parser::parse_move(Instruction::MoveOperation op) {
+  lexer_.get_token();
+
+  switch (op) {
+  case Instruction::Mov:
+  case Instruction::Mvn: {
+    const auto updates = parse_update_flag();
+    const auto cond = parse_condition();
+
+    const auto rd = parse_register();
+    if (!rd || !ensure_comma()) {
+      break;
+    }
+    const auto src2 = parse_operand2();
+    return src2 ? std::make_unique<MoveInstruction>(op, cond, updates, *rd,
+                                                    *src2)
+                : nullptr;
+  }
+  case Instruction::Movt:
+  case Instruction::Movw: {
+    const auto cond = parse_condition();
+
+    const auto rd = parse_register();
+    if (!rd || !ensure_comma()) {
+      break;
+    }
+    const auto imm16 = parse_immediate(/* numbersym */ true);
+    return imm16 ? std::make_unique<MoveInstruction>(op, cond, *rd, *imm16)
+                 : nullptr;
+  }
+  default:
+    break;
+  }
+
+  return nullptr;
 }
 
-std::unique_ptr<ir::ComparisonInstruction>
-Parser::parse_comparison(ir::Instruction::ComparisonOperation op) {
-  return {};
+std::unique_ptr<ComparisonInstruction>
+Parser::parse_comparison(Instruction::ComparisonOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  const auto rn = parse_register();
+  if (!rn || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto src2 = parse_operand2();
+  return src2 ? std::make_unique<ComparisonInstruction>(op, cond, *rn, *src2)
+              : nullptr;
 }
 
-std::unique_ptr<ir::BitfieldInstruction>
-Parser::parse_bitfield(ir::Instruction::BitfieldOperation op) {
-  return {};
+std::unique_ptr<BitfieldInstruction>
+Parser::parse_bitfield(Instruction::BitfieldOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return nullptr;
+  }
+
+  if (op == Instruction::Bfc) {
+    const auto lsb = parse_immediate(/* numbersym */ true);
+    if (!lsb || !ensure_comma()) {
+      return nullptr;
+    }
+    const auto width = parse_immediate(/* numbersym */ true);
+    return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *lsb,
+                                                         *width)
+                 : nullptr;
+  }
+
+  // have you ever heard of D-R-Y??
+  const auto rn = parse_register();
+  if (!rn || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto lsb = parse_immediate(/* numbersym */ true);
+  if (!lsb || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto width = parse_immediate(/* numbersym */ true);
+  return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *rn, *lsb,
+                                                       *width)
+               : nullptr;
 }
 
-std::unique_ptr<ir::ReverseInstruction>
-Parser::parse_reverse(ir::Instruction::ReverseOperation op) {
-  return {};
+std::unique_ptr<ReverseInstruction>
+Parser::parse_reverse(Instruction::ReverseOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return nullptr;
+  }
+  const auto rm = parse_register();
+  return rm ? std::make_unique<ReverseInstruction>(op, cond, *rd, *rm)
+            : nullptr;
 }
 
-std::unique_ptr<ir::BranchInstruction>
-Parser::parse_branch(ir::Instruction::BranchOperation op) {
-  return {};
+std::unique_ptr<BranchInstruction>
+Parser::parse_branch(Instruction::BranchOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  switch (op) {
+  case Instruction::B:
+  case Instruction::Bl: {
+    /*
+    const auto label = lexer_.string_value();
+    return ensure(token::Label, "expected label"sv)
+               ? std::make_unique<BranchInstruction>(op, cond, label)
+               : nullptr;
+    */
+  }
+  case Instruction::Bx: {
+    const auto rm = parse_register();
+    return rm ? std::make_unique<BranchInstruction>(op, cond, *rm) : nullptr;
+  }
+  case Instruction::Cbz:
+  case Instruction::Cbnz: {
+    const auto rn = parse_register();
+    if (!rn || !ensure_comma()) {
+      break;
+    }
+    /*
+    const auto label = lexer_.string_value();
+    return ensure(token::Label, "expected label"sv)
+               ? std::make_unique<BranchInstruction>(op, cond, *rn, label)
+               : nullptr;
+    */
+  }
+  default:
+    break;
+  }
+
+  return nullptr;
 }
 
-std::unique_ptr<ir::SingleMemoryInstruction>
-Parser::parse_single_memory(ir::Instruction::SingleMemoryOperation op) {
-  return {};
+std::unique_ptr<SingleMemoryInstruction>
+Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  const auto rd = parse_register();
+  if (!rd || !ensure_comma()) {
+    return nullptr;
+  }
+
+  if (lexer_.token_kind() == token::Equal) {
+    lexer_.get_token();
+    const auto imm32 = parse_immediate(/* numbersym */ false);
+    return imm32 ? std::make_unique<SingleMemoryInstruction>(op, cond, *rd,
+                                                             *imm32)
+                 : nullptr;
+  } else if (lexer_.token_kind() == token::Label) {
+    /*
+    const auto label = lexer_.string_value();
+    return std::make_unique<SingleMemoryInstruction>(op, cond, *rd, label)
+        : nullptr;
+    */
+  }
+
+  const auto rn = parse_register();
+  if (!rn) {
+    return nullptr;
+  }
+
+  if (lexer_.token_kind() == token::Rbracket) {
+    lexer_.get_token();
+    if (lexer_.token_kind() != token::Comma) {
+      return std::make_unique<SingleMemoryInstruction>(
+          op, cond, *rd, *rn, Operand2::immediate(0),
+          SingleMemoryInstruction::IndexMode::PostIndex, false);
+    }
+    lexer_.get_token();
+    const auto subtract = lexer_.token_kind() == token::Minus;
+    if (subtract) {
+      lexer_.get_token();
+    }
+    const auto src2 = parse_operand2();
+    return src2 ? std::make_unique<SingleMemoryInstruction>(
+                      op, cond, *rd, *rn, *src2,
+                      SingleMemoryInstruction::IndexMode::PostIndex, subtract)
+                : nullptr;
+  }
+
+  if (!ensure_comma()) {
+    return nullptr;
+  }
+  const auto subtract = lexer_.token_kind() == token::Minus;
+  if (subtract) {
+    lexer_.get_token();
+  }
+  const auto src2 = parse_operand2();
+  if (!src2 || !ensure(token::Rbracket, "expected closing bracket"sv)) {
+    return nullptr;
+  }
+  const auto indexmode = lexer_.token_kind() == token::Exclaim
+                             ? SingleMemoryInstruction::IndexMode::PreIndex
+                             : SingleMemoryInstruction::IndexMode::Offset;
+  return std::make_unique<SingleMemoryInstruction>(op, cond, *rd, *rn, *src2,
+                                                   indexmode, subtract);
 }
 
-std::unique_ptr<ir::BlockMemoryInstruction>
-Parser::parse_block_memory(ir::Instruction::BlockMemoryOperation op) {
-  return {};
+std::unique_ptr<BlockMemoryInstruction>
+Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
+  lexer_.get_token();
+
+  const auto cond = parse_condition();
+
+  auto rn = std::optional<Register::Kind>{};
+  auto writeback = false;
+  switch (op) {
+  case Instruction::Ldm:
+  case Instruction::Ldmia:
+  case Instruction::Ldmib:
+  case Instruction::Ldmda:
+  case Instruction::Ldmdb:
+  case Instruction::Stm:
+  case Instruction::Stmia:
+  case Instruction::Stmib:
+  case Instruction::Stmda:
+  case Instruction::Stmdb:
+    rn = parse_register();
+    if (!rn) {
+      return nullptr;
+    }
+    writeback = lexer_.token_kind() == token::Exclaim;
+    if (writeback) {
+      lexer_.get_token();
+    }
+    if (!ensure_comma()) {
+      return nullptr;
+    }
+    break;
+  case Instruction::Push:
+  case Instruction::Pop:
+    rn = Register::SP;
+    writeback = true;
+    break;
+  }
+
+  if (!ensure(token::Lbrace, "expected opening brace"sv)) {
+    return nullptr;
+  }
+
+  auto registers = std::vector<Register::Kind>{};
+  while (lexer_.token_kind() != token::Rbrace) {
+    const auto reg = parse_register();
+    if (!reg) {
+      return nullptr;
+    }
+    if (lexer_.token_kind() == token::Minus) {
+      lexer_.get_token();
+      const auto last = parse_register();
+      if (!last) {
+        return nullptr;
+      }
+      // interpret range and add to registers
+    } else {
+      registers.push_back(*reg);
+    }
+    if (lexer_.token_kind() != token::Rbrace && !ensure_comma()) {
+      return nullptr;
+    }
+  }
+
+  return std::make_unique<BlockMemoryInstruction>(op, cond, *rn, writeback,
+                                                  registers);
 }

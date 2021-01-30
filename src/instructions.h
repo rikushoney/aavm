@@ -30,7 +30,7 @@ struct MultiplyInstruction : public Instruction {
   constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
                                 bool update, Register::Kind rd,
                                 Register::Kind rm, Register::Kind rs,
-                                Register::Kind rn)
+                                Register::Kind rn = Register::R0)
       : Instruction{op, cond, update}, rd{rd}, rm{rm}, rs{rs}, rn{rn} {}
 
   constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
@@ -53,7 +53,7 @@ struct DivideInstruction : public Instruction {
 
 struct MoveInstruction : public Instruction {
   Register::Kind rd{};
-  std::variant<Operand2, unsigned, const Label *> value{};
+  std::variant<Operand2, unsigned> value{};
 
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond, bool update,
                             Register::Kind rd, Operand2 src2)
@@ -62,21 +62,15 @@ struct MoveInstruction : public Instruction {
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond,
                             Register::Kind rd, unsigned imm16)
       : Instruction{op, cond, false}, rd{rd}, value{imm16} {}
-
-  constexpr MoveInstruction(MoveOperation op, condition::Kind cond,
-                            Register::Kind rd, const Label *label)
-      : Instruction{op, cond, false}, rd{rd}, value{label} {}
 };
 
 struct ComparisonInstruction : public Instruction {
-  Register::Kind rd{};
   Register::Kind rn{};
   Operand2 src2{};
 
   constexpr ComparisonInstruction(ComparisonOperation op, condition::Kind cond,
-                                  Register::Kind rd, Register::Kind rn,
-                                  Operand2 src2)
-      : Instruction{op, cond, true}, rd{rd}, rn{rn}, src2{src2} {}
+                                  Register::Kind rn, Operand2 src2)
+      : Instruction{op, cond, true}, rn{rn}, src2{src2} {}
 };
 
 struct BitfieldInstruction : public Instruction {
@@ -124,17 +118,17 @@ struct BranchInstruction : public Instruction {
 
 struct SingleMemoryInstruction : public Instruction {
   Register::Kind rd{};
-  enum IndexMode { PostIndex, Offset, PreIndex } index_mode{};
+  Register::Kind rn{};
+  std::variant<Operand2, const Label *, unsigned> source{};
+  enum class IndexMode { PostIndex, Offset, PreIndex } indexmode{};
   bool subtract{};
-  std::variant<Register::Kind, const Label *, unsigned> source{};
-  Operand2 src2{};
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
                                     condition::Kind cond, Register::Kind rd,
                                     Register::Kind rn, Operand2 src2,
                                     IndexMode mode, bool subtract)
-      : Instruction{op, cond, false}, rd{rd},
-        index_mode{mode}, subtract{subtract}, source{rn}, src2{src2} {}
+      : Instruction{op, cond, false}, rd{rd}, rn{rn}, source{src2},
+        indexmode{mode}, subtract{subtract} {}
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
                                     condition::Kind cond, Register::Kind rd,
@@ -152,16 +146,15 @@ struct BlockMemoryInstruction : public Instruction {
   bool writeback{};
   std::vector<Register::Kind> register_list{};
 
-  /* constexpr */ BlockMemoryInstruction(BlockMemoryOperation op,
-                                         condition::Kind cond,
-                                         Register::Kind rn, bool writeback,
-                                         std::vector<Register::Kind> &registers)
+  /* constexpr */ BlockMemoryInstruction(
+      BlockMemoryOperation op, condition::Kind cond, Register::Kind rn,
+      bool writeback, const std::vector<Register::Kind> &registers)
       : Instruction{op, cond, false}, rn{rn}, writeback{writeback},
         register_list{registers} {}
 
-  /* constexpr */ BlockMemoryInstruction(BlockMemoryOperation op,
-                                         condition::Kind cond,
-                                         std::vector<Register::Kind> &registers)
+  /* constexpr */ BlockMemoryInstruction(
+      BlockMemoryOperation op, condition::Kind cond,
+      const std::vector<Register::Kind> &registers)
       : Instruction{op, cond, false}, rn{Register::SP}, writeback{true},
         register_list{registers} {}
 };
