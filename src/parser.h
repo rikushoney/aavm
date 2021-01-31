@@ -1,43 +1,34 @@
-#ifndef AAVM_PARSER_H
-#define AAVM_PARSER_H
+#ifndef AAVM_PARSER_PARSER_H_
+#define AAVM_PARSER_PARSER_H_
 
 #include "instruction.h"
+#include "instructions.h"
+#include "label.h"
 #include "lexer.h"
 #include "operand2.h"
+#include "register.h"
 #include "textbuffer.h"
-#include "token.h"
-
-#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
-#include <type_traits>
 #include <vector>
 
 namespace aavm::parser {
 
 class Parser {
 public:
-  using int_type = std::int32_t;
+  Parser(Charbuffer &source) : source_{source}, lexer_{source_} {}
 
-  Parser(const Charbuffer &buffer);
-
-  std::vector<std::unique_ptr<ir::Instruction>> parse_instructions();
+  // TODO: make this private and make the parser return a "module" instead with
+  // all parsed instructions and directives etc.
+  std::unique_ptr<ir::Instruction> parse_instruction();
 
 private:
-  template <typename Pred> auto expect(Pred &&p, std::string_view message) {
-    if (!p(lexer_.get_token())) {
-      return false;
-    }
-
-    return true;
-  }
-
-  auto expect(token::Kind kind, std::string_view message) {
-    return expect([kind](const auto given) { return given == kind; }, message);
-  }
-
-  template <typename Pred> auto ensure(Pred &&p, std::string_view message) {
-    if (!p(lexer_.token_kind())) {
+  template <typename Pred>
+  constexpr auto ensure(Pred &&pred, std::string_view message) {
+    if (!pred(lexer_.token_kind())) {
+      // assertion failed
+      static_cast<void>(message); // emit some message
       return false;
     }
 
@@ -45,35 +36,64 @@ private:
     return true;
   }
 
-  auto ensure(token::Kind kind, std::string_view message) {
-    return ensure([kind](const auto given) { return given == kind; }, message);
+  constexpr auto ensure(token::Kind token, std::string_view message) {
+    return ensure([token](const auto tok) { return token == tok; }, message);
   }
 
-  std::unique_ptr<ir::Instruction> parse_instruction();
-  int_type parse_immediate_value();
-  void parse_shifted_register(ir::ShiftedRegister &reg);
-  std::vector<token::Kind> parse_register_list(std::size_t count);
-  ir::Operand2 parse_operand2();
-  std::vector<token::Kind> parse_register_range();
-  void
-  parse_arithmetic_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void
-  parse_multiply_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_divide_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_move_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_shift_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void
-  parse_comparison_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void
-  parse_bitfield_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_reverse_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_branch_instruction(std::unique_ptr<ir::Instruction> &instruction);
-  void parse_single_memory_instruction(
-      std::unique_ptr<ir::Instruction> &instruction);
-  void parse_multiple_memory_instruction(
-      std::unique_ptr<ir::Instruction> &instruction);
+  template <typename Pred>
+  constexpr auto expect(Pred &&pred, std::string_view message) {
+    lexer_.get_token();
+    if (!pred(lexer_.token_kind())) {
+      // assertion failed
+      static_cast<void>(message); // emit some message
+      return false;
+    }
 
+    return true;
+  }
+
+  constexpr auto expect(token::Kind token, std::string_view message) {
+    return expect([token](const auto tok) { return token == tok; }, message);
+  }
+
+  constexpr auto ensure_comma() {
+    using namespace std::string_view_literals;
+    return ensure(token::Comma, "expected comma"sv);
+  }
+
+  bool parse_update_flag();
+  ir::condition::Kind parse_condition();
+  std::optional<unsigned> parse_immediate(bool numbersym = true);
+  std::optional<ir::Register::Kind> parse_register();
+  std::optional<ir::Operand2> parse_operand2();
+  std::optional<const ir::Label *> parse_label();
+
+  std::unique_ptr<ir::ArithmeticInstruction>
+  parse_arithmetic(ir::Instruction::ArithmeticOperation op);
+  std::unique_ptr<ir::MoveInstruction>
+  parse_shift(ir::Instruction::ShiftOperation op);
+  std::unique_ptr<ir::MultiplyInstruction>
+  parse_multiply(ir::Instruction::MultiplyOperation op);
+  std::unique_ptr<ir::DivideInstruction>
+  parse_divide(ir::Instruction::DivideOperation op);
+  std::unique_ptr<ir::MoveInstruction>
+  parse_move(ir::Instruction::MoveOperation op);
+  std::unique_ptr<ir::ComparisonInstruction>
+  parse_comparison(ir::Instruction::ComparisonOperation op);
+  std::unique_ptr<ir::BitfieldInstruction>
+  parse_bitfield(ir::Instruction::BitfieldOperation op);
+  std::unique_ptr<ir::ReverseInstruction>
+  parse_reverse(ir::Instruction::ReverseOperation op);
+  std::unique_ptr<ir::BranchInstruction>
+  parse_branch(ir::Instruction::BranchOperation op);
+  std::unique_ptr<ir::SingleMemoryInstruction>
+  parse_single_memory(ir::Instruction::SingleMemoryOperation op);
+  std::unique_ptr<ir::BlockMemoryInstruction>
+  parse_block_memory(ir::Instruction::BlockMemoryOperation op);
+
+  Charbuffer &source_;
   Lexer lexer_;
+  std::vector<ir::Label> labels_;
 };
 
 } // namespace aavm::parser

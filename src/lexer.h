@@ -1,93 +1,110 @@
-#ifndef AAVM_LEXER_H
-#define AAVM_LEXER_H
+#ifndef AAVM_PARSER_LEXER_H_
+#define AAVM_PARSER_LEXER_H_
 
+#include "keyword.h"
 #include "textbuffer.h"
 #include "token.h"
-
-#include <cstdint>
-#include <optional>
+#include <cstddef>
 #include <queue>
-#include <string>
 #include <string_view>
 
 namespace aavm::parser {
 
 struct SourceLocation {
-  using size_type = std::size_t;
+  std::size_t column;
+  std::size_t line;
+  Charbuffer::iterator cursor;
+};
 
-  size_type line_number;
-  size_type column_number;
-  Charbuffer::iterator text;
+struct LexerState {
+  token::Kind token;
+  unsigned int_value;
+  std::string_view string_value;
 };
 
 class Lexer {
 public:
-  using string_type = std::string_view;
-  using int_type = std::int64_t;
-  using size_type = std::size_t;
+  Lexer(Charbuffer &text)
+      : text_{text}, cursor_{text_.begin()}, current_char_{0},
+        column_number_{1}, line_number_{1}, current_token_{token::Error},
+        int_value_{0}, string_value_{}, saved_states_{} {
+    // prime the first character
+    get_char();
+  }
 
-  Lexer(const Charbuffer &buffer);
+  constexpr auto token_kind() const { return current_token_; }
+  constexpr auto int_value() const { return int_value_; }
+  constexpr auto string_value() const { return string_value_; }
+
+  constexpr auto source_location() const {
+    return SourceLocation{column_number_, line_number_, cursor_};
+  }
+
+  constexpr auto set_state(LexerState state) {
+    current_token_ = state.token;
+    int_value_ = state.int_value;
+    string_value_ = state.string_value;
+  }
+
+  constexpr auto save_state() const {
+    return LexerState{current_token_, int_value_, string_value_};
+  }
 
   auto get_token() {
-    if (!token_queue_.empty()) {
-      kind_ = token_queue_.front();
-      token_queue_.pop();
-      return kind_;
+    if (!saved_states_.empty()) {
+      const auto state = saved_states_.front();
+      saved_states_.pop();
+      set_state(state);
+    } else {
+      const auto tok = lex_token();
+      current_token_ = tok;
     }
 
-    lex_token(kind_);
-    return kind_;
+    return current_token_;
   }
 
   auto peek_token() {
-    if (!token_queue_.empty()) {
-      return token_queue_.front();
+    if (!saved_states_.empty()) {
+      return saved_states_.front().token;
     }
 
-    auto tok = token::Kind{};
-    lex_token(tok);
-    token_queue_.push(tok);
+    // save the current state
+    const auto saved_state = save_state();
+    const auto tok = lex_token();
+    // push the state after lexing
+    saved_states_.push(save_state());
+    // restore the state before lexing
+    set_state(saved_state);
     return tok;
   }
 
-  auto source_location() const {
-    return SourceLocation{line_number_, column_number_, buffer_cursor_};
-  }
-
-  auto token_kind() const { return kind_; }
-
-  auto string_value() const { return string_value_; }
-
-  auto int_value() const { return int_value_; }
-
 private:
-  auto next_char() {
-    cur_char_ = *buffer_cursor_++;
-    if (cur_char_ == '\n') {
+  constexpr int get_char() {
+    current_char_ = *cursor_++;
+    if (current_char_ == '\n') {
       ++line_number_;
       column_number_ = 0;
     } else {
       ++column_number_;
     }
-
-    return cur_char_;
+    return current_char_;
   }
 
-  void lex_token(token::Kind &tok);
-  void lex_identifier(token::Kind &tok);
-  void lex_integer(token::Kind &tok);
+  token::Kind lex_token();
+  token::Kind lex_integer();
+  token::Kind lex_identifier();
 
-  const Charbuffer &buffer_;
-  Charbuffer::iterator buffer_cursor_;
-  char cur_char_;
-  size_type line_number_;
-  size_type column_number_;
+  const Charbuffer &text_;
+  Charbuffer::iterator cursor_;
+  int current_char_;
+  std::size_t column_number_;
+  std::size_t line_number_;
 
-  token::Kind kind_;
-  string_type string_value_;
-  int_type int_value_;
+  token::Kind current_token_;
+  unsigned int_value_;
+  std::string_view string_value_;
 
-  std::queue<token::Kind> token_queue_;
+  std::queue<LexerState> saved_states_;
 };
 
 } // namespace aavm::parser

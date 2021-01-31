@@ -1,81 +1,62 @@
-#ifndef AAVM_TEXTBUFFER_H
-#define AAVM_TEXTBUFFER_H
+#ifndef AAVM_TEXTBUFFER_H_
+#define AAVM_TEXTBUFFER_H_
 
 #include <array>
-#include <cstddef>
-#include <istream>
-#include <iterator>
-#include <string>
 #include <string_view>
-#include <type_traits>
 #include <vector>
 
 namespace aavm {
 
-namespace detail {
+namespace detail_ {
 
-template <std::size_t Chunksize, typename Istream>
-auto vector_from_stream(Istream &stream) {
+template <typename Istream> auto read_stream_into_vector_(Istream &instream) {
+  constexpr auto chunk_size = sizeof(unsigned int) * 32u;
   using char_type = typename Istream::char_type;
+  auto vec = std::vector<char_type>();
+  auto buffer = std::array<char_type, chunk_size>();
 
-  auto vec = std::vector<char_type>{};
-  auto buffer = std::array<char_type, Chunksize>{};
-  const auto chars_start = buffer.begin();
+  const auto buffer_start = buffer.begin();
 
-  while (stream) {
-    stream.read(buffer.data(), buffer.size());
-    const auto chars_end = std::next(chars_start, stream.gcount());
-    vec.insert(vec.end(), chars_start, chars_end);
+  while (instream) {
+    instream.read(buffer.data(), chunk_size);
+    const auto chars_read = instream.gcount();
+    const auto read_end = std::next(buffer_start, chars_read);
+    vec.insert(vec.end(), buffer_start, read_end);
   }
 
   return vec;
 }
 
-} // namespace detail
+} // namespace detail_
 
 template <typename CharT> class Textbuffer {
-private:
-  // 4K buffer size
-  static constexpr auto CHUNK_SIZE{0x1000};
-
 public:
-  using char_type = CharT;
-  using size_type = std::size_t;
-  using buffer_type = std::vector<char_type>;
-  using iterator = typename buffer_type::const_iterator;
-
-  Textbuffer() = delete;
-
-  Textbuffer(Textbuffer &&buffer)
-      : internal_buffer_{std::move(buffer.internal_buffer_)} {}
-
-  auto operator=(Textbuffer &&buffer) -> Textbuffer & {
-    internal_buffer_ = std::move(buffer.internal_buffer_);
-    return *this;
-  }
+  using value_type = CharT;
+  using container_type = std::vector<value_type>;
+  using size_type = typename container_type::size_type;
+  using iterator = typename container_type::const_iterator;
 
   template <typename Istream>
-  Textbuffer(Istream &stream)
-      : internal_buffer_{detail::vector_from_stream<CHUNK_SIZE>(stream)} {
-    static_assert(sizeof(char_type) == sizeof(typename Istream::char_type));
+  Textbuffer(Istream &instream)
+      : container_{detail_::read_stream_into_vector_(instream)} {
+    static_assert(sizeof(value_type) == sizeof(typename Istream::char_type));
   }
 
-  auto begin() const { return internal_buffer_.begin(); }
+  auto begin() const { return container_.begin(); }
 
-  auto end() const { return internal_buffer_.end(); }
+  auto end() const { return container_.end(); }
 
-  template <typename Ostream> auto dump(Ostream &stream) const {
-    static_assert(sizeof(char_type) == sizeof(typename Ostream::char_type));
-    stream.write(internal_buffer_.data(), internal_buffer_.size());
+  auto view(iterator first, iterator last) const {
+    return std::string_view(&(*first), static_cast<size_type>(last - first));
   }
 
-  auto view(iterator first, iterator last) const
-      -> std::basic_string_view<char_type> {
-    return {&(*first), static_cast<size_type>(last - first)};
+  template <typename Ostream> auto dump(Ostream &outstream) const {
+    static_assert(sizeof(value_type) == sizeof(typename Ostream::char_type));
+    outstream.write(container_.begin(), container_.end());
   }
 
 private:
-  buffer_type internal_buffer_;
+  const container_type container_;
 };
 
 using Charbuffer = Textbuffer<char>;

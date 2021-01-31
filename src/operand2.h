@@ -1,58 +1,34 @@
-#ifndef AAVM_OPERAND2_H
-#define AAVM_OPERAND2_H
+#ifndef AAVM_IR_OPERAND2_H_
+#define AAVM_IR_OPERAND2_H_
 
-#include "keyword_map.h"
-#include "token.h"
-
-#include <assert.h>
-#include <cstdint>
-#include <type_traits>
+#include "instruction.h"
+#include "register.h"
 #include <variant>
 
 namespace aavm::ir {
 
-using shift_variant = std::variant<std::int32_t, parser::token::Kind>;
-
 struct ShiftedRegister {
-  parser::token::Kind rm;
-  parser::token::Kind op;
-  shift_variant shift;
-  bool subtract;
+  Register::Kind rm;
+  Instruction::ShiftOperation sh;
+  std::variant<unsigned, Register::Kind> shift_value;
 };
 
 struct Operand2 {
-  using int_type = std::int32_t;
-  using operand_variant = std::variant<int_type, ShiftedRegister>;
+  std::variant<unsigned, ShiftedRegister> value;
 
-  operand_variant operand;
+  static constexpr auto immediate(unsigned imm) { return Operand2{imm}; }
 
-  static auto immediate(int_type imm) {
-    auto op2 = Operand2{};
-    op2.operand = imm;
-    return op2;
+  static constexpr auto
+  shifted_register(Register::Kind rm,
+                   Instruction::ShiftOperation sh = Instruction::Lsl,
+                   unsigned shamt5 = 0) {
+    return Operand2{ShiftedRegister{rm, sh, shamt5}};
   }
 
-  static auto shifted_register(ShiftedRegister regstr) {
-    auto op2 = Operand2{};
-    op2.operand = regstr;
-    return op2;
-  }
-
-  template <typename Shift>
-  static auto shifted_register(parser::token::Kind rm, parser::token::Kind op,
-                               Shift shift) {
-    static_assert(std::is_convertible_v<Shift, shift_variant>);
-    assert(parser::token::is_register(rm));
-    assert(parser::token::is_shift_instruction(op));
-    if constexpr (std::is_same_v<Shift, parser::token::Kind>) {
-      assert(parser::token::is_register(shift));
-    }
-
-    auto reg = ShiftedRegister{};
-    reg.rm = rm;
-    reg.op = op;
-    reg.shift = shift;
-    return shifted_register(reg);
+  static constexpr auto shifted_register(Register::Kind rm,
+                                         Instruction::ShiftOperation sh,
+                                         Register::Kind rs) {
+    return Operand2{ShiftedRegister{rm, sh, rs}};
   }
 };
 

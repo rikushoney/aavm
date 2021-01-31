@@ -1,100 +1,29 @@
 #include "lexer.h"
 #include "character.h"
-#include "keyword_map.h"
+#include "keyword.h"
 #include "token.h"
 
-#include <assert.h>
-#include <iterator>
-
+using namespace aavm;
 using namespace aavm::parser;
 
-Lexer::Lexer(const Charbuffer &buffer)
-    : buffer_{buffer}, buffer_cursor_{buffer_.begin()}, line_number_{0},
-      column_number_{0} {
-  // prime the first character
-  next_char();
-  line_number_ = 1;
-  column_number_ = 1;
-}
-
-void Lexer::lex_identifier(token::Kind &tok) {
-  const auto tok_start = std::prev(buffer_cursor_);
-
-  while (is_alnum(cur_char_) || cur_char_ == '_' || cur_char_ == '.') {
-    next_char();
-  }
-
-  string_value_ = buffer_.view(tok_start, std::prev(buffer_cursor_));
-
-  // TODO: does not find blt correctly - finds bl as instruction and then t is
-  // an invalid suffix where it should be b with lt suffix
-  const auto kw = keyword::find_longest(
-      [lowercase = to_lower(string_value_)](const auto kw) {
-        return starts_with(lowercase, kw);
-      });
-
-  const auto is_valid_register = token::is_register(kw->second) &&
-                                 kw->first.length() == string_value_.length();
-
-  tok = kw->second;
-
-  if (is_valid_register) {
-    return;
-  }
-
-  if (kw == keyword::none || !token::is_instruction(tok)) {
-    tok = token::Label;
-    return;
-  }
-
-  // assume the token is an instruction with optional suffixes
-  auto str = string_value_;
-  str.remove_prefix(kw->first.length());
-
-  // check for the optional 'S'
-  const auto has_update_flag = to_lower(str.front()) == 's';
-  if (has_update_flag) {
-    token_queue_.push(token::S);
-    str.remove_prefix(1);
-  }
-
-  const auto cond = keyword::find(
-      [lowercase = to_lower(str)](const auto kw) { return lowercase == kw; });
-
-  if (cond != keyword::none) {
-    token_queue_.push(cond->second);
-    str.remove_prefix(cond->first.length());
-  }
-
-  if (!str.empty()) {
-    // assumption is incorrect - token is not valid instruction => must be label
-    if (cond != keyword::none) {
-      token_queue_.pop();
-    }
-
-    if (has_update_flag) {
-      token_queue_.pop();
-    }
-
-    tok = token::Label;
-  }
-}
-
-void Lexer::lex_integer(token::Kind &tok) {
-  auto radix{10};
+token::Kind Lexer::lex_integer() {
+  auto radix = 10; // assume decimal
   int_value_ = 0;
 
-  if (cur_char_ == '0') {
-    switch (next_char()) {
-    case 'b':
-    case 'B':
-      radix = 2;
-      next_char();
-      break;
+  // check for prefixes that specify base
+  if (current_char_ == '0') {
+    // numbers that start with "0" imply octal unless followed by an "X" to
+    // specify hexidecimal or "B" for binary numbers
+    switch (get_char()) {
     case 'x':
     case 'X':
       radix = 16;
-      next_char();
+      get_char();
+      break;
+    case 'b':
+    case 'B':
+      radix = 2;
+      get_char();
       break;
     default:
       radix = 8;
@@ -102,37 +31,79 @@ void Lexer::lex_integer(token::Kind &tok) {
     }
   }
 
-  while (is_xdigit(cur_char_)) {
-    const auto val = ctoi(cur_char_);
-
-    if (val >= radix) {
-      // invalid digit!
-      assert(false);
-      tok = token::Error;
-      return;
+  while (is_xdigit(current_char_)) {
+    const auto digit = ctoi(current_char_);
+    if (digit >= radix) {
+      // digit not valid in base
+      return token::Error;
     }
 
-    int_value_ = int_value_ * radix + val;
-    if (int_value_ > 0xFFFFFFFF) {
-      // overflow!
-      assert(false);
-      tok = token::Error;
-      return;
+    int_value_ = int_value_ * radix + digit;
+    if (int_value_ < digit) {
+      // overflow occurred
+      return token::Error;
     }
 
-    next_char();
+    get_char();
   }
 
-  tok = token::Integer;
+  return token::Integer;
 }
 
-void Lexer::lex_token(token::Kind &tok) {
-  while (buffer_cursor_ != buffer_.end()) {
-    switch (cur_char_) {
+token::Kind Lexer::lex_identifier() {
+  const auto id_start = cursor_;
+
+  while (is_alnum(current_char_) || current_char_ == '_') {
+    get_char();
+  }
+
+  string_value_ = text_.view(id_start, cursor_);
+  const auto lowercase_string = to_lower(string_value_);
+
+  // here we assume the identifier is an instruction
+  auto maybe_instruction = std::string_view{lowercase_string};
+
+  auto condition = keyword::none;
+  if (maybe_instruction.length() > 2) {
+    const auto maybe_condition =
+        maybe_instruction.substr(maybe_instruction.length() - 2);
+    condition = keyword::find(std::string_view{to_lower(maybe_condition)});
+    if (condition != keyword::none) {
+      maybe_instruction.remove_suffix(condition->first.length());
+    }
+  }
+
+  const auto updates_flags = to_lower(maybe_instruction.back()) == 's';
+  if (updates_flags) {
+    maybe_instruction.remove_suffix(1);
+  }
+
+  const auto operation = keyword::find(maybe_instruction);
+
+  if (operation != keyword::none) {
+    if (updates_flags) {
+      saved_states_.push({token::UpdateFlag});
+    }
+
+    if (condition != keyword::none) {
+      saved_states_.push({condition->second});
+    }
+
+    return operation->second;
+  }
+
+  return token::Label;
+}
+
+token::Kind Lexer::lex_token() {
+  auto tok = token::Error;
+
+  while (cursor_ != text_.end()) {
+    switch (current_char_) {
     case '\r':
     case '\t':
     case ' ':
-      next_char();
+      get_char();
       continue;
     case '\n':
       tok = token::Newline;
@@ -171,30 +142,26 @@ void Lexer::lex_token(token::Kind &tok) {
       tok = token::Period;
       break;
     case ';':
-      while (next_char() != '\n') {
-        // just skip everything until we reach end of line
+      while (get_char() != '\n') {
+        // skip comment until end of line
       }
       tok = token::Newline;
       break;
     default:
-      if (is_alpha(cur_char_)) {
-        lex_identifier(tok);
-        return;
+      if (is_xdigit(current_char_)) {
+        return lex_integer();
       }
 
-      if (is_digit(cur_char_)) {
-        lex_integer(tok);
-        return;
+      if (is_alpha(current_char_) || current_char_ == '_') {
+        return lex_identifier();
       }
 
-      // invalid character!
-      tok = token::Error;
-      return;
+      return token::Error;
     }
 
-    next_char();
-    return;
+    get_char();
+    return tok;
   }
 
-  tok = token::Eof;
+  return token::Eof;
 }
