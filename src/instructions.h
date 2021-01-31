@@ -13,12 +13,16 @@ namespace aavm::ir {
 struct ArithmeticInstruction : public Instruction {
   Register::Kind rd{};
   Register::Kind rn{};
-  Operand2 src2{};
+  std::variant<Operand2, const Label *> source{};
 
   constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
                                   bool update, Register::Kind rd,
                                   Register::Kind rn, Operand2 src2)
-      : Instruction{op, cond, update}, rd{rd}, rn{rn}, src2{src2} {}
+      : Instruction{op, cond, update}, rd{rd}, rn{rn}, source{src2} {}
+
+  constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
+                                  Register::Kind rd, const Label *label)
+      : Instruction{op, cond, false}, rd{rd}, source{label} {}
 };
 
 struct MultiplyInstruction : public Instruction {

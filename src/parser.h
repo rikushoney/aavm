@@ -3,6 +3,7 @@
 
 #include "instruction.h"
 #include "instructions.h"
+#include "label.h"
 #include "lexer.h"
 #include "operand2.h"
 #include "register.h"
@@ -10,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace aavm::parser {
 
@@ -61,9 +63,10 @@ private:
 
   bool parse_update_flag();
   ir::condition::Kind parse_condition();
-  std::optional<unsigned> parse_immediate(bool numbersym);
+  std::optional<unsigned> parse_immediate(bool numbersym = true);
   std::optional<ir::Register::Kind> parse_register();
   std::optional<ir::Operand2> parse_operand2();
+  std::optional<const ir::Label *> parse_label();
 
   std::unique_ptr<ir::ArithmeticInstruction>
   parse_arithmetic(ir::Instruction::ArithmeticOperation op);
@@ -90,6 +93,7 @@ private:
 
   Charbuffer &source_;
   Lexer lexer_;
+  std::vector<ir::Label> labels_;
 };
 
 } // namespace aavm::parser

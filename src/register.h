@@ -5,22 +5,22 @@ namespace aavm::ir {
 
 struct Register {
   enum Kind {
-    R0,
-    R1,
-    R2,
-    R3,
-    R4,
-    R5,
-    R6,
-    R7,
-    R8,
-    R9,
-    R10,
-    R11,
-    R12,
-    SP,
-    LR,
-    PC
+    R0 = 1,
+    R1 = 2,
+    R2 = 3,
+    R3 = 4,
+    R4 = 5,
+    R5 = 6,
+    R6 = 7,
+    R7 = 8,
+    R8 = 9,
+    R9 = 10,
+    R10 = 11,
+    R11 = 12,
+    R12 = 13,
+    SP = 14,
+    LR = 15,
+    PC = 16
   };
 };
 

@@ -138,49 +138,49 @@ public:
     block_memory_operations_end_ = 66
   };
 
-  static constexpr auto is_arithmetic_instruction(unsigned op) {
+  static constexpr auto is_arithmetic_operation(unsigned op) {
     return op >= arithmetic_operations_start_ &&
            op <= arithmetic_operations_end_;
   }
 
-  static constexpr auto is_shift_instruction(unsigned op) {
+  static constexpr auto is_shift_operation(unsigned op) {
     return op >= shift_operations_start_ && op <= shift_operations_end_;
   }
 
-  static constexpr auto is_multiply_instruction(unsigned op) {
+  static constexpr auto is_multiply_operation(unsigned op) {
     return op >= multiply_operations_start_ && op <= multiply_operations_end_;
   }
 
-  static constexpr auto is_divide_instruction(unsigned op) {
+  static constexpr auto is_divide_operation(unsigned op) {
     return op >= divide_operations_start_ && op <= divide_operations_end_;
   }
 
-  static constexpr auto is_move_instruction(unsigned op) {
+  static constexpr auto is_move_operation(unsigned op) {
     return op >= move_operations_start_ && op <= move_operations_end_;
   }
 
-  static constexpr auto is_comparison_instruction(unsigned op) {
+  static constexpr auto is_comparison_operation(unsigned op) {
     return op >= compare_operations_start_ && op <= compare_operations_end_;
   }
 
-  static constexpr auto is_bitfield_instruction(unsigned op) {
+  static constexpr auto is_bitfield_operation(unsigned op) {
     return op >= bitfield_operations_start_ && op <= bitfield_operations_end_;
   }
 
-  static constexpr auto is_reverse_instruction(unsigned op) {
+  static constexpr auto is_reverse_operation(unsigned op) {
     return op >= reverse_operations_start_ && op <= reverse_operations_end_;
   }
 
-  static constexpr auto is_branch_instruction(unsigned op) {
+  static constexpr auto is_branch_operation(unsigned op) {
     return op >= branch_operations_start_ && op <= branch_operations_end_;
   }
 
-  static constexpr auto is_single_memory_instruction(unsigned op) {
+  static constexpr auto is_single_memory_operation(unsigned op) {
     return op >= single_memory_operations_start_ &&
            op <= single_memory_operations_end_;
   }
 
-  static constexpr auto is_block_memory_instruction(unsigned op) {
+  static constexpr auto is_block_memory_operation(unsigned op) {
     return op >= block_memory_operations_start_ &&
            op <= block_memory_operations_end_;
   }

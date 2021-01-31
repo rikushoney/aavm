@@ -227,35 +227,35 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
   if (tok != token::kw_nop) {
     const auto operation = map_token(tok);
     if (operation > 0) {
-      if (Instruction::is_arithmetic_instruction(operation)) {
+      if (Instruction::is_arithmetic_operation(operation)) {
         return parse_arithmetic(
             static_cast<Instruction::ArithmeticOperation>(operation));
-      } else if (Instruction::is_shift_instruction(operation)) {
+      } else if (Instruction::is_shift_operation(operation)) {
         return parse_shift(static_cast<Instruction::ShiftOperation>(operation));
-      } else if (Instruction::is_multiply_instruction(operation)) {
+      } else if (Instruction::is_multiply_operation(operation)) {
         return parse_multiply(
             static_cast<Instruction::MultiplyOperation>(operation));
-      } else if (Instruction::is_divide_instruction(operation)) {
+      } else if (Instruction::is_divide_operation(operation)) {
         return parse_divide(
             static_cast<Instruction::DivideOperation>(operation));
-      } else if (Instruction::is_move_instruction(operation)) {
+      } else if (Instruction::is_move_operation(operation)) {
         return parse_move(static_cast<Instruction::MoveOperation>(operation));
-      } else if (Instruction::is_comparison_instruction(operation)) {
+      } else if (Instruction::is_comparison_operation(operation)) {
         return parse_comparison(
             static_cast<Instruction::ComparisonOperation>(operation));
-      } else if (Instruction::is_bitfield_instruction(operation)) {
+      } else if (Instruction::is_bitfield_operation(operation)) {
         return parse_bitfield(
             static_cast<Instruction::BitfieldOperation>(operation));
-      } else if (Instruction::is_reverse_instruction(operation)) {
+      } else if (Instruction::is_reverse_operation(operation)) {
         return parse_reverse(
             static_cast<Instruction::ReverseOperation>(operation));
-      } else if (Instruction::is_branch_instruction(operation)) {
+      } else if (Instruction::is_branch_operation(operation)) {
         return parse_branch(
             static_cast<Instruction::BranchOperation>(operation));
-      } else if (Instruction::is_single_memory_instruction(operation)) {
+      } else if (Instruction::is_single_memory_operation(operation)) {
         return parse_single_memory(
             static_cast<Instruction::SingleMemoryOperation>(operation));
-      } else if (Instruction::is_block_memory_instruction(operation)) {
+      } else if (Instruction::is_block_memory_operation(operation)) {
         return parse_block_memory(
             static_cast<Instruction::BlockMemoryOperation>(operation));
       } else {
@@ -318,7 +318,7 @@ std::optional<Register::Kind> Parser::parse_register() {
 
 std::optional<Operand2> Parser::parse_operand2() {
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto imm = parse_immediate(/* numbersym */ true);
+    const auto imm = parse_immediate();
     return imm ? std::optional{Operand2::immediate(*imm)} : std::nullopt;
   }
 
@@ -333,13 +333,13 @@ std::optional<Operand2> Parser::parse_operand2() {
     }
 
     const auto sh = map_token(lexer_.token_kind());
-    if (!Instruction::is_shift_instruction(sh)) {
+    if (!Instruction::is_shift_operation(sh)) {
       return std::nullopt;
     }
 
     lexer_.get_token();
     if (lexer_.token_kind() == token::Numbersym) {
-      const auto shamt5 = parse_immediate(/* numbersym */ true);
+      const auto shamt5 = parse_immediate();
       return shamt5 ? std::optional{Operand2::shifted_register(
                           *rm, static_cast<Instruction::ShiftOperation>(sh),
                           *shamt5)}
@@ -355,6 +355,20 @@ std::optional<Operand2> Parser::parse_operand2() {
   return Operand2::shifted_register(rm.value());
 }
 
+std::optional<const Label *> Parser::parse_label() {
+  const auto label = lexer_.string_value();
+  if (!ensure(token::Label, "expected label"sv)) {
+    return std::nullopt;
+  }
+  for (const auto &l : labels_) {
+    if (label == l.name) {
+      return &l;
+    }
+  }
+  return &labels_.emplace_back(
+      Label{static_cast<LabelID>(labels_.size() + 1), label});
+}
+
 std::unique_ptr<ArithmeticInstruction>
 Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
   lexer_.get_token();
@@ -364,6 +378,16 @@ Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
 
   const auto rd = parse_register();
   if (!rd || !ensure_comma()) {
+    return nullptr;
+  }
+  // special case for ADR
+  if (lexer_.token_kind() == token::Label && op == Instruction::Adr) {
+    const auto label = parse_label();
+    return label
+               ? std::make_unique<ArithmeticInstruction>(op, cond, *rd, *label)
+               : nullptr;
+  }
+  if (op == Instruction::Adr) {
     return nullptr;
   }
   const auto rn = parse_register();
@@ -406,7 +430,7 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
   }
 
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto shamt5 = parse_immediate(/* numbersym */ true);
+    const auto shamt5 = parse_immediate();
     return shamt5 ? std::make_unique<MoveInstruction>(
                         Instruction::Mov, cond, updates, *rd,
                         Operand2::shifted_register(*rm, op, *shamt5))
@@ -538,7 +562,7 @@ Parser::parse_move(Instruction::MoveOperation op) {
     if (!rd || !ensure_comma()) {
       break;
     }
-    const auto imm16 = parse_immediate(/* numbersym */ true);
+    const auto imm16 = parse_immediate();
     return imm16 ? std::make_unique<MoveInstruction>(op, cond, *rd, *imm16)
                  : nullptr;
   }
@@ -576,26 +600,25 @@ Parser::parse_bitfield(Instruction::BitfieldOperation op) {
   }
 
   if (op == Instruction::Bfc) {
-    const auto lsb = parse_immediate(/* numbersym */ true);
+    const auto lsb = parse_immediate();
     if (!lsb || !ensure_comma()) {
       return nullptr;
     }
-    const auto width = parse_immediate(/* numbersym */ true);
+    const auto width = parse_immediate();
     return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *lsb,
                                                          *width)
                  : nullptr;
   }
 
-  // have you ever heard of D-R-Y??
   const auto rn = parse_register();
   if (!rn || !ensure_comma()) {
     return nullptr;
   }
-  const auto lsb = parse_immediate(/* numbersym */ true);
+  const auto lsb = parse_immediate();
   if (!lsb || !ensure_comma()) {
     return nullptr;
   }
-  const auto width = parse_immediate(/* numbersym */ true);
+  const auto width = parse_immediate();
   return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *rn, *lsb,
                                                        *width)
                : nullptr;
@@ -625,12 +648,9 @@ Parser::parse_branch(Instruction::BranchOperation op) {
   switch (op) {
   case Instruction::B:
   case Instruction::Bl: {
-    /*
-    const auto label = lexer_.string_value();
-    return ensure(token::Label, "expected label"sv)
-               ? std::make_unique<BranchInstruction>(op, cond, label)
-               : nullptr;
-    */
+    const auto label = parse_label();
+    return label ? std::make_unique<BranchInstruction>(op, cond, *label)
+                 : nullptr;
   }
   case Instruction::Bx: {
     const auto rm = parse_register();
@@ -642,12 +662,9 @@ Parser::parse_branch(Instruction::BranchOperation op) {
     if (!rn || !ensure_comma()) {
       break;
     }
-    /*
-    const auto label = lexer_.string_value();
-    return ensure(token::Label, "expected label"sv)
-               ? std::make_unique<BranchInstruction>(op, cond, *rn, label)
-               : nullptr;
-    */
+    const auto label = parse_label();
+    return label ? std::make_unique<BranchInstruction>(op, cond, *label)
+                 : nullptr;
   }
   default:
     break;
@@ -674,11 +691,10 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
                                                              *imm32)
                  : nullptr;
   } else if (lexer_.token_kind() == token::Label) {
-    /*
-    const auto label = lexer_.string_value();
-    return std::make_unique<SingleMemoryInstruction>(op, cond, *rd, label)
-        : nullptr;
-    */
+    const auto label = parse_label();
+    return label ? std::make_unique<SingleMemoryInstruction>(op, cond, *rd,
+                                                             *label)
+                 : nullptr;
   }
 
   const auto rn = parse_register();
@@ -777,7 +793,9 @@ Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
       if (!last) {
         return nullptr;
       }
-      // interpret range and add to registers
+      for (auto i = static_cast<unsigned>(*reg); i <= *last; ++i) {
+        registers.push_back(static_cast<Register::Kind>(i));
+      }
     } else {
       registers.push_back(*reg);
     }
