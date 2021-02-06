@@ -19,8 +19,10 @@ constexpr unsigned map_token(token::Kind token) {
   case kw_ne:
     return condition::NE;
   case kw_cs:
+  case kw_hs:
     return condition::CS;
   case kw_cc:
+  case kw_lo:
     return condition::CC;
   case kw_mi:
     return condition::MI;
@@ -327,32 +329,32 @@ std::optional<Operand2> Parser::parse_operand2() {
     return std::nullopt;
   }
 
-  if (lexer_.token_kind() == token::Comma) {
-    if (!expect(token::is_instruction, "expected shift operation"sv)) {
-      return std::nullopt;
-    }
-
-    const auto sh = map_token(lexer_.token_kind());
-    if (!Instruction::is_shift_operation(sh)) {
-      return std::nullopt;
-    }
-
-    lexer_.get_token();
-    if (lexer_.token_kind() == token::Numbersym) {
-      const auto shamt5 = parse_immediate();
-      return shamt5 ? std::optional{Operand2::shifted_register(
-                          *rm, static_cast<Instruction::ShiftOperation>(sh),
-                          *shamt5)}
-                    : std::nullopt;
-    } else {
-      const auto rs = parse_register();
-      return rs ? std::optional{Operand2::shifted_register(
-                      *rm, static_cast<Instruction::ShiftOperation>(sh), *rs)}
-                : std::nullopt;
-    }
+  if (lexer_.token_kind() != token::Comma) {
+    return Operand2::shifted_register(rm.value());
   }
 
-  return Operand2::shifted_register(rm.value());
+  if (!expect(token::is_instruction, "expected shift operation"sv)) {
+    return std::nullopt;
+  }
+
+  const auto sh = map_token(lexer_.token_kind());
+  if (!Instruction::is_shift_operation(sh)) {
+    return std::nullopt;
+  }
+
+  lexer_.get_token();
+  if (lexer_.token_kind() == token::Numbersym) {
+    const auto shamt5 = parse_immediate();
+    return shamt5 ? std::optional{Operand2::shifted_register(
+                        *rm, static_cast<Instruction::ShiftOperation>(sh),
+                        *shamt5)}
+                  : std::nullopt;
+  } else {
+    const auto rs = parse_register();
+    return rs ? std::optional{Operand2::shifted_register(
+                    *rm, static_cast<Instruction::ShiftOperation>(sh), *rs)}
+              : std::nullopt;
+  }
 }
 
 std::optional<const Label *> Parser::parse_label() {
