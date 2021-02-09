@@ -82,11 +82,11 @@ token::Kind Lexer::lex_identifier() {
 
   if (operation != keyword::none) {
     if (updates_flags) {
-      saved_states_.push({token::UpdateFlag});
+      token_queue_.push(token::UpdateFlag);
     }
 
     if (condition != keyword::none) {
-      saved_states_.push({condition->second});
+      token_queue_.push(condition->second);
     }
 
     return operation->second;

@@ -17,7 +17,8 @@ namespace aavm::parser {
 
 class Parser {
 public:
-  Parser(Charbuffer &source) : source_{source}, lexer_{source_} {}
+  Parser() = delete;
+  Parser(const Charbuffer &source) : lexer_{source} {}
 
   // TODO: make this private and make the parser return a "module" instead with
   // all parsed instructions and directives etc.
@@ -27,8 +28,7 @@ private:
   template <typename Pred>
   constexpr auto ensure(Pred &&pred, std::string_view message) {
     if (!pred(lexer_.token_kind())) {
-      // assertion failed
-      static_cast<void>(message); // emit some message
+      // fmt::print(message);
       return false;
     }
 
@@ -44,8 +44,7 @@ private:
   constexpr auto expect(Pred &&pred, std::string_view message) {
     lexer_.get_token();
     if (!pred(lexer_.token_kind())) {
-      // assertion failed
-      static_cast<void>(message); // emit some message
+      // fmt::print(message);
       return false;
     }
 
@@ -91,9 +90,8 @@ private:
   std::unique_ptr<ir::BlockMemoryInstruction>
   parse_block_memory(ir::Instruction::BlockMemoryOperation op);
 
-  Charbuffer &source_;
   Lexer lexer_;
-  std::vector<ir::Label> labels_;
+  std::vector<ir::Label> labels_{};
 };
 
 } // namespace aavm::parser

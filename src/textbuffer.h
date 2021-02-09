@@ -36,6 +36,7 @@ public:
   using size_type = typename container_type::size_type;
   using iterator = typename container_type::const_iterator;
 
+  Textbuffer() = delete;
   template <typename Istream>
   Textbuffer(Istream &instream)
       : container_{detail_::read_stream_into_vector_(instream)} {

@@ -330,7 +330,7 @@ std::optional<Operand2> Parser::parse_operand2() {
   }
 
   if (lexer_.token_kind() != token::Comma) {
-    return Operand2::shifted_register(rm.value());
+    return Operand2::shifted_register(*rm);
   }
 
   if (!expect(token::is_instruction, "expected shift operation"sv)) {
@@ -383,14 +383,11 @@ Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
     return nullptr;
   }
   // special case for ADR
-  if (lexer_.token_kind() == token::Label && op == Instruction::Adr) {
+  if (op == Instruction::Adr) {
     const auto label = parse_label();
     return label
                ? std::make_unique<ArithmeticInstruction>(op, cond, *rd, *label)
                : nullptr;
-  }
-  if (op == Instruction::Adr) {
-    return nullptr;
   }
   const auto rn = parse_register();
   if (!rn) {
