@@ -1,0 +1,6 @@
+add_executable(testtextbuffer testtextbuffer.cpp)
+add_executable(testparser testparser.cpp)
+target_link_libraries(testtextbuffer PRIVATE aavm-parser gtest gmock_main)
+target_link_libraries(testparser PRIVATE aavm-parser gtest gmock_main)
+add_test(NAME textbuffer_test COMMAND testtextbuffer)
+add_test(NAME parser_test COMMAND testparser)

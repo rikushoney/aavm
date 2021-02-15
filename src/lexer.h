@@ -19,7 +19,7 @@ struct SourceLocation {
 class Lexer {
 public:
   Lexer() = delete;
-  Lexer(const Charbuffer &text) : text_{text} {
+  Lexer(const Charbuffer &text) : text_{text}, cursor_{text_.begin()} {
     // prime the first character
     get_char();
   }

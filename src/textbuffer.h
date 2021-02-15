@@ -42,6 +42,12 @@ public:
       : container_{detail_::read_stream_into_vector_(instream)} {
     static_assert(sizeof(value_type) == sizeof(typename Istream::char_type));
   }
+  Textbuffer(std::string_view source)
+      : container_{source.begin(), source.end()} {}
+
+  Textbuffer &operator=(std::string_view source) {
+    container_ = container_type{source.begin(), source.end()};
+  }
 
   auto begin() const { return container_.begin(); }
 
@@ -51,9 +57,11 @@ public:
     return std::string_view(&(*first), static_cast<size_type>(last - first));
   }
 
+  auto size() const { return container_.size(); }
+
   template <typename Ostream> auto dump(Ostream &outstream) const {
     static_assert(sizeof(value_type) == sizeof(typename Ostream::char_type));
-    outstream.write(container_.begin(), container_.end());
+    outstream.write(container_.data(), container_.size());
   }
 
 private:

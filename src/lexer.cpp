@@ -2,6 +2,7 @@
 #include "character.h"
 #include "keyword.h"
 #include "token.h"
+#include <iterator>
 
 using namespace aavm;
 using namespace aavm::parser;
@@ -51,13 +52,13 @@ token::Kind Lexer::lex_integer() {
 }
 
 token::Kind Lexer::lex_identifier() {
-  const auto id_start = cursor_;
+  const auto id_start = std::prev(cursor_);
 
   while (is_alnum(current_char_) || current_char_ == '_') {
     get_char();
   }
 
-  string_value_ = text_.view(id_start, cursor_);
+  string_value_ = text_.view(id_start, std::prev(cursor_));
   const auto lowercase_string = to_lower(string_value_);
 
   // here we assume the identifier is an instruction
@@ -148,7 +149,7 @@ token::Kind Lexer::lex_token() {
       tok = token::Newline;
       break;
     default:
-      if (is_xdigit(current_char_)) {
+      if (is_digit(current_char_)) {
         return lex_integer();
       }
 

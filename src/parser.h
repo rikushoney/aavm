@@ -8,6 +8,7 @@
 #include "operand2.h"
 #include "register.h"
 #include "textbuffer.h"
+#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -18,7 +19,10 @@ namespace aavm::parser {
 class Parser {
 public:
   Parser() = delete;
-  Parser(const Charbuffer &source) : lexer_{source} {}
+  Parser(const Charbuffer &source) : lexer_{source} {
+    // prime the first token
+    lexer_.get_token();
+  }
 
   // TODO: make this private and make the parser return a "module" instead with
   // all parsed instructions and directives etc.
@@ -28,7 +32,7 @@ private:
   template <typename Pred>
   constexpr auto ensure(Pred &&pred, std::string_view message) {
     if (!pred(lexer_.token_kind())) {
-      // fmt::print(message);
+      fmt::print(message);
       return false;
     }
 
@@ -44,7 +48,7 @@ private:
   constexpr auto expect(Pred &&pred, std::string_view message) {
     lexer_.get_token();
     if (!pred(lexer_.token_kind())) {
-      // fmt::print(message);
+      fmt::print(message);
       return false;
     }
 
@@ -67,6 +71,7 @@ private:
   std::optional<ir::Operand2> parse_operand2();
   std::optional<const ir::Label *> parse_label();
 
+protected:
   std::unique_ptr<ir::ArithmeticInstruction>
   parse_arithmetic(ir::Instruction::ArithmeticOperation op);
   std::unique_ptr<ir::MoveInstruction>
@@ -90,6 +95,7 @@ private:
   std::unique_ptr<ir::BlockMemoryInstruction>
   parse_block_memory(ir::Instruction::BlockMemoryOperation op);
 
+private:
   Lexer lexer_;
   std::vector<ir::Label> labels_{};
 };
