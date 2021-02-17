@@ -272,6 +272,16 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
       Operand2{ShiftedRegister{Register::Kind::R0, Instruction::Lsl, 0u}});
 }
 
+const Label *Parser::find_label(std::string_view name) {
+  for (const auto &l : labels_) {
+    if (name == l.name) {
+      return &l;
+    }
+  }
+  return &labels_.emplace_back(
+      Label{static_cast<LabelID>(labels_.size() + 1), name});
+}
+
 bool Parser::parse_update_flag() {
   const auto update = lexer_.token_kind() == token::UpdateFlag;
   if (update) {
@@ -362,13 +372,7 @@ std::optional<const Label *> Parser::parse_label() {
   if (!ensure(token::Label, "expected label"sv)) {
     return std::nullopt;
   }
-  for (const auto &l : labels_) {
-    if (label == l.name) {
-      return &l;
-    }
-  }
-  return &labels_.emplace_back(
-      Label{static_cast<LabelID>(labels_.size() + 1), label});
+  return find_label(label);
 }
 
 std::unique_ptr<ArithmeticInstruction>

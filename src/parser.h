@@ -64,6 +64,8 @@ private:
     return ensure(token::Comma, "expected comma"sv);
   }
 
+  const ir::Label *find_label(std::string_view name);
+
   bool parse_update_flag();
   ir::condition::Kind parse_condition();
   std::optional<unsigned> parse_immediate(bool numbersym = true);
