@@ -22,8 +22,6 @@ TEST(ParserTest, CanParseArithmeticInstruction) {
       static_cast<ir::ArithmeticInstruction &>(*parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rn, ir::Register::R1);
-  EXPECT_TRUE(std::holds_alternative<ir::Operand2>(instruction.source));
-  const auto op2 = std::get<ir::Operand2>(instruction.source);
-  EXPECT_TRUE(std::holds_alternative<unsigned>(op2.value));
-  EXPECT_EQ(std::get<unsigned>(op2.value), 100u);
+  EXPECT_TRUE(instruction.src2.immediate);
+  EXPECT_EQ(instruction.src2.imm12, 100u);
 }

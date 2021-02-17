@@ -269,7 +269,7 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
   // return mov r0, r0
   return std::make_unique<MoveInstruction>(
       Instruction::Mov, condition::AL, false, Register::Kind::R0,
-      Operand2::shifted_register(Register::Kind::R0));
+      Operand2{ShiftedRegister{Register::Kind::R0, Instruction::Lsl, 0u}});
 }
 
 bool Parser::parse_update_flag() {
@@ -321,7 +321,7 @@ std::optional<Register::Kind> Parser::parse_register() {
 std::optional<Operand2> Parser::parse_operand2() {
   if (lexer_.token_kind() == token::Numbersym) {
     const auto imm = parse_immediate();
-    return imm ? std::optional{Operand2::immediate(*imm)} : std::nullopt;
+    return imm ? std::optional{Operand2{*imm}} : std::nullopt;
   }
 
   const auto rm = parse_register();
@@ -330,7 +330,7 @@ std::optional<Operand2> Parser::parse_operand2() {
   }
 
   if (lexer_.token_kind() != token::Comma) {
-    return Operand2::shifted_register(*rm);
+    return Operand2{ShiftedRegister{*rm, Instruction::Lsl, 0}};
   }
 
   if (!expect(token::is_instruction, "expected shift operation"sv)) {
@@ -345,14 +345,14 @@ std::optional<Operand2> Parser::parse_operand2() {
   lexer_.get_token();
   if (lexer_.token_kind() == token::Numbersym) {
     const auto shamt5 = parse_immediate();
-    return shamt5 ? std::optional{Operand2::shifted_register(
+    return shamt5 ? std::optional{Operand2{ShiftedRegister{
                         *rm, static_cast<Instruction::ShiftOperation>(sh),
-                        *shamt5)}
+                        *shamt5}}}
                   : std::nullopt;
   } else {
     const auto rs = parse_register();
-    return rs ? std::optional{Operand2::shifted_register(
-                    *rm, static_cast<Instruction::ShiftOperation>(sh), *rs)}
+    return rs ? std::optional{Operand2{ShiftedRegister{
+                    *rm, static_cast<Instruction::ShiftOperation>(sh), *rs}}}
               : std::nullopt;
   }
 }
@@ -421,7 +421,7 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
   if (op == Instruction::Rrx) {
     return std::make_unique<MoveInstruction>(
         Instruction::Mov, cond, updates, *rd,
-        Operand2::shifted_register(*rm, op));
+        Operand2{ShiftedRegister{*rm, op, 0}});
   }
 
   if (!ensure_comma()) {
@@ -432,14 +432,14 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
     const auto shamt5 = parse_immediate();
     return shamt5 ? std::make_unique<MoveInstruction>(
                         Instruction::Mov, cond, updates, *rd,
-                        Operand2::shifted_register(*rm, op, *shamt5))
+                        Operand2{ShiftedRegister{*rm, op, *shamt5}})
                   : nullptr;
   }
 
   const auto rs = parse_register();
   return rs ? std::make_unique<MoveInstruction>(
                   Instruction::Mov, cond, updates, *rd,
-                  Operand2::shifted_register(*rm, op, *rs))
+                  Operand2{ShiftedRegister{*rm, op, *rs}})
             : nullptr;
 }
 
@@ -696,6 +696,9 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
                  : nullptr;
   }
 
+  if (!ensure(token::Lbracket, "expected opening bracket"sv)) {
+    return nullptr;
+  }
   const auto rn = parse_register();
   if (!rn) {
     return nullptr;
@@ -705,7 +708,7 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
     lexer_.get_token();
     if (lexer_.token_kind() != token::Comma) {
       return std::make_unique<SingleMemoryInstruction>(
-          op, cond, *rd, *rn, Operand2::immediate(0),
+          op, cond, *rd, *rn, Operand2{0u},
           SingleMemoryInstruction::IndexMode::PostIndex, false);
     }
     lexer_.get_token();

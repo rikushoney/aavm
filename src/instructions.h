@@ -13,20 +13,29 @@ namespace aavm::ir {
 struct ArithmeticInstruction : public Instruction {
   Register::Kind rd{};
   Register::Kind rn{};
-  std::variant<Operand2, const Label *> source{};
+  union {
+    Operand2 src2;
+    const Label *label;
+  };
 
   constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
                                   bool update, Register::Kind rd,
                                   Register::Kind rn, Operand2 src2)
-      : Instruction{op, cond, update}, rd{rd}, rn{rn}, source{src2} {}
+      : Instruction{op, cond, update}, rd{rd}, rn{rn}, src2{src2} {}
 
   constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
                                   Register::Kind rd, const Label *label)
-      : Instruction{op, cond, false}, rd{rd}, source{label} {}
+      : Instruction{op, cond, false}, rd{rd}, label{label} {}
 };
 
 struct MultiplyInstruction : public Instruction {
-  std::variant<Register::Kind, std::pair<Register::Kind, Register::Kind>> rd{};
+  union {
+    Register::Kind rd;
+    struct {
+      Register::Kind rdlo;
+      Register::Kind rdhi;
+    };
+  };
   Register::Kind rm{};
   Register::Kind rs{};
   Register::Kind rn{};
@@ -41,7 +50,8 @@ struct MultiplyInstruction : public Instruction {
                                 bool update,
                                 std::pair<Register::Kind, Register::Kind> rd,
                                 Register::Kind rm, Register::Kind rs)
-      : Instruction{op, cond, update}, rd{rd}, rm{rm}, rs{rs} {}
+      : Instruction{op, cond, update}, rdlo{rd.first}, rdhi{rd.second}, rm{rm},
+        rs{rs} {}
 };
 
 struct DivideInstruction : public Instruction {
@@ -57,20 +67,23 @@ struct DivideInstruction : public Instruction {
 
 struct MoveInstruction : public Instruction {
   Register::Kind rd{};
-  std::variant<Operand2, unsigned> value{};
+  union {
+    Operand2 src2;
+    unsigned imm16;
+  };
 
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond, bool update,
                             Register::Kind rd, Operand2 src2)
-      : Instruction{op, cond, update}, rd{rd}, value{src2} {}
+      : Instruction{op, cond, update}, rd{rd}, src2{src2} {}
 
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond,
                             Register::Kind rd, unsigned imm16)
-      : Instruction{op, cond, false}, rd{rd}, value{imm16} {}
+      : Instruction{op, cond, false}, rd{rd}, imm16{imm16} {}
 };
 
 struct ComparisonInstruction : public Instruction {
   Register::Kind rn{};
-  Operand2 src2{};
+  Operand2 src2;
 
   constexpr ComparisonInstruction(ComparisonOperation op, condition::Kind cond,
                                   Register::Kind rn, Operand2 src2)
@@ -123,7 +136,7 @@ struct BranchInstruction : public Instruction {
 struct SingleMemoryInstruction : public Instruction {
   Register::Kind rd{};
   Register::Kind rn{};
-  std::variant<Operand2, const Label *, unsigned> source{};
+  std::variant<Operand2, const Label *, unsigned> source;
   enum class IndexMode { PostIndex, Offset, PreIndex } indexmode{};
   bool subtract{};
 

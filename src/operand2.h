@@ -8,28 +8,35 @@
 namespace aavm::ir {
 
 struct ShiftedRegister {
-  Register::Kind rm;
-  Instruction::ShiftOperation sh;
-  std::variant<unsigned, Register::Kind> shift_value;
+  Register::Kind rm{};
+  Instruction::ShiftOperation sh{};
+  union {
+    unsigned shamt5{};
+    Register::Kind rs;
+  };
+  bool immediate{};
+
+  explicit constexpr ShiftedRegister(Register::Kind rm,
+                                     Instruction::ShiftOperation sh,
+                                     unsigned shamt5)
+      : rm{rm}, sh{sh}, shamt5{shamt5}, immediate{true} {}
+
+  explicit constexpr ShiftedRegister(Register::Kind rm,
+                                     Instruction::ShiftOperation sh,
+                                     Register::Kind rs)
+      : rm{rm}, sh{sh}, rs{rs}, immediate{false} {}
 };
 
 struct Operand2 {
-  std::variant<unsigned, ShiftedRegister> value;
+  union {
+    unsigned imm12{};
+    ShiftedRegister rm;
+  };
+  bool immediate{};
 
-  static constexpr auto immediate(unsigned imm) { return Operand2{imm}; }
+  explicit constexpr Operand2(unsigned imm12) : imm12{imm12}, immediate{true} {}
 
-  static constexpr auto
-  shifted_register(Register::Kind rm,
-                   Instruction::ShiftOperation sh = Instruction::Lsl,
-                   unsigned shamt5 = 0) {
-    return Operand2{ShiftedRegister{rm, sh, shamt5}};
-  }
-
-  static constexpr auto shifted_register(Register::Kind rm,
-                                         Instruction::ShiftOperation sh,
-                                         Register::Kind rs) {
-    return Operand2{ShiftedRegister{rm, sh, rs}};
-  }
+  explicit constexpr Operand2(ShiftedRegister rm) : rm{rm}, immediate{false} {}
 };
 
 } // namespace aavm::ir
