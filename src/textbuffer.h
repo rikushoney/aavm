@@ -70,6 +70,14 @@ private:
 
 using Charbuffer = Textbuffer<char>;
 
+namespace textbuffer_literals {
+
+inline Charbuffer operator""_tb(const char *str, std::size_t len) {
+  return {std::string_view{str, len}};
+}
+
+} // namespace textbuffer_literals
+
 } // namespace aavm
 
 #endif

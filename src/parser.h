@@ -104,4 +104,8 @@ private:
 
 } // namespace aavm::parser
 
+namespace aavm {
+using Parser = parser::Parser;
+}
+
 #endif

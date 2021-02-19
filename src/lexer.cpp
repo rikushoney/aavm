@@ -99,7 +99,7 @@ token::Kind Lexer::lex_identifier() {
 token::Kind Lexer::lex_token() {
   auto tok = token::Error;
 
-  while (cursor_ != text_.end()) {
+  while (cursor_ != text_.end() || current_char_ != '\0') {
     switch (current_char_) {
     case '\r':
     case '\t':
@@ -164,5 +164,6 @@ token::Kind Lexer::lex_token() {
     return tok;
   }
 
+  current_char_ = '\0';
   return token::Eof;
 }
