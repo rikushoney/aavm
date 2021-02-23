@@ -19,10 +19,7 @@ struct SourceLocation {
 class Lexer {
 public:
   Lexer() = delete;
-  Lexer(const Charbuffer &text) : text_{text}, cursor_{text_.begin()} {
-    // prime the first character
-    get_char();
-  }
+  Lexer(const Charbuffer &text) : text_{text} {}
 
   constexpr auto token_kind() const { return current_token_; }
   constexpr auto int_value() const { return int_value_; }
@@ -48,14 +45,17 @@ public:
 
 private:
   int get_char() {
-    current_char_ = *cursor_++;
-    if (current_char_ == '\n') {
+    if (cursor_ == text_.end()) {
+      return '\0';
+    }
+    auto current_char = static_cast<int>(*(++cursor_));
+    if (current_char == '\n') {
       ++line_number_;
       column_number_ = 0;
     } else {
       ++column_number_;
     }
-    return current_char_;
+    return current_char;
   }
 
   token::Kind lex_token();
@@ -63,10 +63,9 @@ private:
   token::Kind lex_identifier();
 
   const Charbuffer &text_;
-  Charbuffer::iterator cursor_{};
-  int current_char_{};
+  Charbuffer::iterator cursor_{text_.begin()};
   std::size_t column_number_{0};
-  std::size_t line_number_{1};
+  std::size_t line_number_{0};
 
   token::Kind current_token_{};
   unsigned int_value_{};
