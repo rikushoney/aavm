@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
+if(${CMAKE_VERSION} VERSION_GREATER "3.15")
+  cmake_policy(SET CMP0091 NEW)
+endif()
 project(aavm)
 
 # AAVM requires C++17
@@ -19,6 +22,9 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Force MSVC builds to use static linking 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 option(AAVM_ENABLE_TESTING "Enable building aavm unit tests" ON)
 
