@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.13.4)
 if(${CMAKE_VERSION} VERSION_GREATER "3.15")
   cmake_policy(SET CMP0091 NEW)
 endif()
-project(aavm)
+
+project(aavm CXX)
 
 # AAVM requires C++17
 set(CMAKE_CXX_STANDARD 17)
