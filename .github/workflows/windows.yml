@@ -1,0 +1,25 @@
+name: AAVM Windows CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{matrix.name}}
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: cmake --build . --config $BUILD_TYPE
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C $BUILD_TYPE
