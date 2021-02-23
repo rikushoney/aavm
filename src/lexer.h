@@ -28,7 +28,9 @@ public:
   constexpr auto int_value() const { return int_value_; }
   constexpr auto string_value() const { return string_value_; }
 
-  constexpr auto source_location() const {
+  // MSVC does not implement std::vector<char>::const_iterator (aka
+  // Charbuffer::iterator) as constexpr yet
+  /* constexpr */ auto source_location() const {
     return SourceLocation{column_number_, line_number_, cursor_};
   }
 
