@@ -12,10 +12,9 @@ constexpr auto is_valid_identifier(int ch) { return is_alnum(ch) || ch == '_'; }
 token::Kind Lexer::lex_integer() {
   auto radix = 10; // assume decimal
   int_value_ = 0;
-  auto current_char = static_cast<int>(*cursor_);
 
   // check for prefixes that specify base
-  if (current_char == '0') {
+  if (current_char_ == '0') {
     // numbers that start with "0" imply octal unless followed by an "X" to
     // specify hexidecimal or "B" for binary numbers
     switch (get_char()) {
@@ -35,9 +34,8 @@ token::Kind Lexer::lex_integer() {
     }
   }
 
-  current_char = static_cast<int>(*cursor_);
-  while (is_xdigit(current_char)) {
-    const auto digit = ctoi(current_char);
+  while (is_xdigit(current_char_)) {
+    const auto digit = ctoi(current_char_);
     if (digit >= radix) {
       // digit not valid in base
       return token::Error;
@@ -49,19 +47,22 @@ token::Kind Lexer::lex_integer() {
       return token::Error;
     }
 
-    current_char = get_char();
+    get_char();
   }
 
+  cursor_ = std::prev(cursor_);
   return token::Integer;
 }
 
 token::Kind Lexer::lex_identifier() {
-  const auto id_start = cursor_;
-  auto current_char = static_cast<int>(*cursor_);
-  while (is_valid_identifier(current_char)) {
-    current_char = get_char();
+  const auto id_start = std::prev(cursor_);
+  while (is_valid_identifier(current_char_)) {
+    get_char();
   }
 
+  if (cursor_ != text_.end()) {
+    cursor_ = std::prev(cursor_);
+  }
   string_value_ = text_.view(id_start, cursor_);
   const auto lowercase_string = to_lower(string_value_);
 
@@ -102,14 +103,15 @@ token::Kind Lexer::lex_identifier() {
 
 token::Kind Lexer::lex_token() {
   auto tok = token::Error;
-  auto current_char = static_cast<int>(*cursor_);
 
-  while (cursor_ != text_.end()) {
-    switch (current_char) {
+  for (;;) {
+    switch (get_char()) {
+    case '\0':
+      tok = token::Eof;
+      break;
     case '\r':
     case '\t':
     case ' ':
-      current_char = get_char();
       continue;
     case '\n':
       tok = token::Newline;
@@ -154,20 +156,17 @@ token::Kind Lexer::lex_token() {
       tok = token::Newline;
       break;
     default:
-      if (is_digit(current_char)) {
+      if (is_digit(current_char_)) {
         return lex_integer();
       }
 
-      if (is_alpha(current_char) || current_char == '_') {
+      if (is_alpha(current_char_) || current_char_ == '_') {
         return lex_identifier();
       }
 
       return token::Error;
     }
 
-    get_char();
     return tok;
   }
-
-  return token::Eof;
 }

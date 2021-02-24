@@ -46,16 +46,17 @@ public:
 private:
   int get_char() {
     if (cursor_ == text_.end()) {
-      return '\0';
-    }
-    auto current_char = static_cast<int>(*(++cursor_));
-    if (current_char == '\n') {
-      ++line_number_;
-      column_number_ = 0;
+      current_char_ = 0;
     } else {
-      ++column_number_;
+      current_char_ = static_cast<int>(*cursor_++);
+      if (current_char_ == '\n') {
+        ++line_number_;
+        column_number_ = 0;
+      } else {
+        ++column_number_;
+      }
     }
-    return current_char;
+    return current_char_;
   }
 
   token::Kind lex_token();
@@ -64,6 +65,7 @@ private:
 
   const Charbuffer &text_;
   Charbuffer::iterator cursor_{text_.begin()};
+  int current_char_{'\0'};
   std::size_t column_number_{0};
   std::size_t line_number_{0};
 
