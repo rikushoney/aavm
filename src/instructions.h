@@ -36,12 +36,11 @@ struct MultiplyInstruction : public Instruction {
 #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
 #pragma clang diagnostic ignored "-Wnested-anon-types"
 #elif defined(AAVM_GCC)
-#pragma gcc diagnostic push
-#pragma gcc diagnostic ignored "-Wgnu-anonymous-struct"
-#pragma gcc diagnostic ignored "-Wnested-anon-types"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #elif defined(AAVM_MSVC)
 #pragma warning(push)
-// thing
+#pragma warning(disable : 4201)
 #endif
   union {
     Register::Kind rd;
@@ -53,7 +52,7 @@ struct MultiplyInstruction : public Instruction {
 #if defined(AAVM_CLANG)
 #pragma clang diagnostic pop
 #elif defined(AAVM_GCC)
-#pragma gcc diagnostic pop
+#pragma GCC diagnostic pop
 #elif defined(AAVM_MSVC)
 #pragma warning(pop)
 #endif

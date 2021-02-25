@@ -21,6 +21,14 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  add_compile_definitions(AAVM_CLANG)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_definitions(AAVM_GCC)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  add_compile_definitions(AAVM_MSVC)
+endif()
+
 # Output compiled binaries and library files to appropriate directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
