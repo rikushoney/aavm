@@ -19,7 +19,7 @@ template <typename Istream> auto read_stream_into_vector_(Istream &instream) {
 
   while (instream) {
     instream.read(buffer.data(), chunk_size);
-    const auto chars_read = instream.gcount();
+    const auto chars_read = static_cast<int>(instream.gcount());
     const auto read_end = std::next(buffer_start, chars_read);
     vec.insert(vec.end(), buffer_start, read_end);
   }

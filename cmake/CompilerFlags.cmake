@@ -1,0 +1,17 @@
+function(target_clang_compiler_flags target_name)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(${target_name} ${ARGN})
+  endif()
+endfunction()
+
+function(target_gcc_compiler_flags target_name)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(${target_name} ${ARGN})
+  endif()
+endfunction()
+
+function(target_msvc_compiler_flags target_name)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(${target_name} ${ARGN})
+  endif()
+endfunction()

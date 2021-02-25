@@ -1,6 +1,7 @@
 #ifndef AAVM_IR_INSTRUCTIONS_H_
 #define AAVM_IR_INSTRUCTIONS_H_
 
+#include "compiler.h"
 #include "instruction.h"
 #include "label.h"
 #include "operand2.h"
@@ -29,6 +30,19 @@ struct ArithmeticInstruction : public Instruction {
 };
 
 struct MultiplyInstruction : public Instruction {
+// clang, gcc and msvc support anonymous structs as an extension
+#if defined(AAVM_CLANG)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma clang diagnostic ignored "-Wnested-anon-types"
+#elif defined(AAVM_GCC)
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma gcc diagnostic ignored "-Wnested-anon-types"
+#elif defined(AAVM_MSVC)
+#pragma warning(push)
+// thing
+#endif
   union {
     Register::Kind rd;
     struct {
@@ -36,6 +50,14 @@ struct MultiplyInstruction : public Instruction {
       Register::Kind rdhi;
     };
   };
+#if defined(AAVM_CLANG)
+#pragma clang diagnostic pop
+#elif defined(AAVM_GCC)
+#pragma gcc diagnostic pop
+#elif defined(AAVM_MSVC)
+#pragma warning(pop)
+#endif
+
   Register::Kind rm{};
   Register::Kind rs{};
   Register::Kind rn{};

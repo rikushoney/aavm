@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "compiler.h"
 #include "instructions.h"
 #include "operand2.h"
 #include "register.h"
@@ -316,7 +317,16 @@ std::optional<unsigned> Parser::parse_immediate(bool numbersym) {
     return std::nullopt;
   }
 
+// we don't really care that the value stays unsigned because at assembly level
+// it is all up to interpretation anyway
+#if AAVM_MSVC
+#pragma warning(push)
+#pragma warning(disable : 4146)
+#endif
   return negate ? static_cast<unsigned>(-imm) : imm;
+#if AAVM_MSVC
+#pragma warning(pop)
+#endif
 }
 
 std::optional<Register::Kind> Parser::parse_register() {
@@ -795,11 +805,12 @@ Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
     }
     if (lexer_.token_kind() == token::Minus) {
       lexer_.get_token();
-      const auto last = parse_register();
-      if (!last) {
+      const auto reg2 = parse_register();
+      if (!reg2) {
         return nullptr;
       }
-      for (auto i = static_cast<unsigned>(*reg); i <= *last; ++i) {
+      const auto last = static_cast<unsigned>(*reg2);
+      for (auto i = static_cast<unsigned>(*reg); i <= last; ++i) {
         registers.push_back(static_cast<Register::Kind>(i));
       }
     } else {
