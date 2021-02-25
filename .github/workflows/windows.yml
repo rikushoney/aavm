@@ -1,13 +1,14 @@
-name: AAVM Windows CI
+name: windows
 
 on: [push, pull_request]
 
 jobs:
   build:
     name: ${{matrix.name}}
-    runs-on: windows-2019
+    runs-on: ${{matrix.os}} 
     strategy:
       matrix:
+        os: windows-latest
         build-type: [Debug, Release]
 
     steps:
