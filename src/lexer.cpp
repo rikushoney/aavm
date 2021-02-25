@@ -34,7 +34,7 @@ token::Kind Lexer::lex_integer() {
     }
   }
 
-  while (is_xdigit(current_char_)) {
+  for (; is_xdigit(current_char_); get_char()) {
     const auto digit = ctoi(current_char_);
     if (digit >= radix) {
       // digit not valid in base
@@ -46,24 +46,19 @@ token::Kind Lexer::lex_integer() {
       // overflow occurred
       return token::Error;
     }
-
-    get_char();
   }
 
-  cursor_ = std::prev(cursor_);
   return token::Integer;
 }
 
 token::Kind Lexer::lex_identifier() {
   const auto id_start = std::prev(cursor_);
-  while (is_valid_identifier(current_char_)) {
+  auto id_length = 0;
+  for (; is_valid_identifier(current_char_); ++id_length) {
     get_char();
   }
 
-  if (cursor_ != text_.end()) {
-    cursor_ = std::prev(cursor_);
-  }
-  string_value_ = text_.view(id_start, cursor_);
+  string_value_ = text_.view(id_start, id_length);
   const auto lowercase_string = to_lower(string_value_);
 
   // here we assume the identifier is an instruction
@@ -105,13 +100,14 @@ token::Kind Lexer::lex_token() {
   auto tok = token::Error;
 
   for (;;) {
-    switch (get_char()) {
+    switch (current_char_) {
     case '\0':
       tok = token::Eof;
       break;
     case '\r':
     case '\t':
     case ' ':
+      get_char();
       continue;
     case '\n':
       tok = token::Newline;
@@ -150,7 +146,7 @@ token::Kind Lexer::lex_token() {
       tok = token::Period;
       break;
     case ';':
-      while (get_char() != '\n') {
+      while (get_char() != '\n' && current_char_ != '\0') {
         // skip comment until end of line
       }
       tok = token::Newline;
@@ -167,6 +163,7 @@ token::Kind Lexer::lex_token() {
       return token::Error;
     }
 
+    get_char();
     return tok;
   }
 }

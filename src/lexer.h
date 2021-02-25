@@ -19,7 +19,7 @@ struct SourceLocation {
 class Lexer {
 public:
   Lexer() = delete;
-  Lexer(const Charbuffer &text) : text_{text} {}
+  Lexer(const Charbuffer &text) : text_{text} { get_char(); }
 
   constexpr auto token_kind() const { return current_token_; }
   constexpr auto int_value() const { return int_value_; }

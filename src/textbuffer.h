@@ -53,8 +53,12 @@ public:
 
   auto end() const { return container_.end(); }
 
+  auto view(iterator first, std::size_t length) const {
+    return std::string_view(&(*first), length);
+  }
+
   auto view(iterator first, iterator last) const {
-    return std::string_view(&(*first), static_cast<size_type>(last - first));
+    return view(first, static_cast<std::size_t>(last - first));
   }
 
   auto size() const { return container_.size(); }

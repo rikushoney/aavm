@@ -122,3 +122,36 @@ TEST(ParserTest, CanParseBranchInstruction) {
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
 }
+
+TEST(ParserTest, CanParseSingleMemoryInstruction) {
+  const auto parsed = Parser{"ldr r0, [r1, #1]"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  EXPECT_EQ(parsed->operation(), ir::Instruction::Ldr);
+  EXPECT_FALSE(parsed->updatesflags());
+  EXPECT_EQ(parsed->condition(), ir::condition::AL);
+  const auto instruction =
+      static_cast<ir::SingleMemoryInstruction &>(*parsed.get());
+  EXPECT_EQ(instruction.rd, ir::Register::R0);
+  EXPECT_EQ(instruction.rn, ir::Register::R1);
+  EXPECT_TRUE(std::holds_alternative<ir::Operand2>(instruction.source));
+  EXPECT_TRUE(std::get<ir::Operand2>(instruction.source).immediate);
+  EXPECT_EQ(std::get<ir::Operand2>(instruction.source).imm12, 1u);
+  EXPECT_EQ(instruction.indexmode,
+            ir::SingleMemoryInstruction::IndexMode::Offset);
+  EXPECT_FALSE(instruction.subtract);
+}
+
+TEST(ParserTest, CanParseBlockMemoryInstruction) {
+  const auto parsed = Parser{"ldm r0, {r1, r2}"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  EXPECT_EQ(parsed->operation(), ir::Instruction::Ldm);
+  EXPECT_FALSE(parsed->updatesflags());
+  EXPECT_EQ(parsed->condition(), ir::condition::AL);
+  const auto instruction =
+      static_cast<ir::BlockMemoryInstruction &>(*parsed.get());
+  EXPECT_EQ(instruction.rn, ir::Register::R0);
+  EXPECT_FALSE(instruction.writeback);
+  EXPECT_EQ(instruction.register_list.size(), 2);
+  EXPECT_EQ(instruction.register_list[0], ir::Register::R1);
+  EXPECT_EQ(instruction.register_list[1], ir::Register::R2);
+}

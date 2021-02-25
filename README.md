@@ -1,3 +1,3 @@
-# aavm - ARM assembler and virtual machine
+# AAVM - ARM assembler and virtual machine
 
-A program that assembles ARM assembly code and can run assembled code.
+AAVM is a open-source collection of tools and utilities used to assemble ARM code and execute assembled code in a virtual machine.
