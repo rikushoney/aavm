@@ -1,22 +1,28 @@
 #ifndef AAVM_COMPILER_H_
 #define AAVM_COMPILER_H_
 
+#if !defined(AAVM_MSVC) || !defined(AAVM_CLANG) || !defined(AAVM_GCC) ||       \
+    !defined(AAVM_WINDOWS) || !defined(AAVM_LINUX) || !defined(AAVM_MACOS)
+#error "config error"
+#endif
+
 namespace aavm {
 namespace compiler {
 
-#if defined(AAVM_MSVC)
+#if AAVM_MSVC
 static constexpr auto msvc = true;
 static constexpr auto clang = false;
 static constexpr auto gcc = false;
-#elif defined(AAVM_CLANG)
+#elif AAVM_CLANG
 static constexpr auto msvc = false;
 static constexpr auto clang = true;
 static constexpr auto gcc = false;
-#elif defined(AAVM_GCC)
+#elif AAVM_GCC
 static constexpr auto msvc = false;
 static constexpr auto clang = false;
 static constexpr auto gcc = true;
 #else
+#warning "unsupported compiler"
 static constexpr auto msvc = false;
 static constexpr auto clang = false;
 static constexpr auto gcc = false;
@@ -26,19 +32,20 @@ static constexpr auto gcc = false;
 
 namespace platform {
 
-#if defined(AAVM_WINDOWS)
+#if AAVM_WINDOWS
 static constexpr auto windows = true;
 static constexpr auto linux = false;
 static constexpr auto macos = false;
-#elif defined(AAVM_LINUX)
+#elif AAVM_LINUX
 static constexpr auto windows = false;
 static constexpr auto linux = true;
 static constexpr auto macos = false;
-#elif defined(AAVM_MACOS)
+#elif AAVM_MACOS
 static constexpr auto windows = false;
 static constexpr auto linux = false;
 static constexpr auto macos = true;
 #else
+#warning "unsupported platform"
 static constexpr auto windows = false;
 static constexpr auto linux = false;
 static constexpr auto macos = false;
