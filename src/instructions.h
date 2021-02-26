@@ -31,14 +31,14 @@ struct ArithmeticInstruction : public Instruction {
 
 struct MultiplyInstruction : public Instruction {
 // clang, gcc and msvc support anonymous structs as an extension
-#if defined(AAVM_CLANG)
+#if AAVM_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
 #pragma clang diagnostic ignored "-Wnested-anon-types"
-#elif defined(AAVM_GCC)
+#elif AAVM_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#elif defined(AAVM_MSVC)
+#elif AAVM_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4201)
 #endif
@@ -49,11 +49,11 @@ struct MultiplyInstruction : public Instruction {
       Register::Kind rdhi;
     };
   };
-#if defined(AAVM_CLANG)
+#if AAVM_CLANG
 #pragma clang diagnostic pop
-#elif defined(AAVM_GCC)
+#elif AAVM_GCC
 #pragma GCC diagnostic pop
-#elif defined(AAVM_MSVC)
+#elif AAVM_MSVC
 #pragma warning(pop)
 #endif
 
