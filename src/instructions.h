@@ -2,6 +2,7 @@
 #define AAVM_IR_INSTRUCTIONS_H_
 
 #include "compiler.h"
+#include "fmt/format.h"
 #include "instruction.h"
 #include "label.h"
 #include "operand2.h"

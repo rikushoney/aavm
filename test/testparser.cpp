@@ -160,7 +160,7 @@ TEST(ParserTest, CanParseConditionSuffix) {
   EXPECT_EQ(parsed->condition(), ir::condition::EQ);
 }
 
-TEST(ParsedTest, CanParseUpdateFlag) {
+TEST(ParserTest, CanParseUpdateFlag) {
   const auto parsed = Parser{"adds r0, r1, #1"_tb}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
@@ -168,10 +168,51 @@ TEST(ParsedTest, CanParseUpdateFlag) {
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
 }
 
-TEST(ParsedTest, CanParseUpdateFlagAndConditionSuffix) {
+TEST(ParserTest, CanParseUpdateFlagAndConditionSuffix) {
   const auto parsed = Parser{"addseq r0, r1, #1"_tb}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
   EXPECT_TRUE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::EQ);
+}
+
+TEST(ParserTest, CanParseOperand2Immediate) {
+  const auto parsed = Parser{"add r0, r1, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instruction = *ir::as_arithmetic(parsed.get());
+  EXPECT_TRUE(instruction.src2.immediate);
+  EXPECT_EQ(instruction.src2.imm12, 1u);
+}
+
+TEST(ParserTest, CanParseOperand2Register) {
+  const auto parsed = Parser{"add r0, r1, r2"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instruction = *ir::as_arithmetic(parsed.get());
+  EXPECT_FALSE(instruction.src2.immediate);
+  EXPECT_EQ(instruction.src2.rm.rm, ir::Register::R2);
+  EXPECT_EQ(instruction.src2.rm.sh, ir::Instruction::Lsl);
+  EXPECT_TRUE(instruction.src2.rm.immediate);
+  EXPECT_EQ(instruction.src2.rm.shamt5, 0u);
+}
+
+TEST(ParserTest, CanParseOperand2RegisterImmediateShift) {
+  const auto parsed = Parser{"add r0, r1, r2, ASR #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instruction = *ir::as_arithmetic(parsed.get());
+  EXPECT_FALSE(instruction.src2.immediate);
+  EXPECT_EQ(instruction.src2.rm.rm, ir::Register::R2);
+  EXPECT_EQ(instruction.src2.rm.sh, ir::Instruction::Asr);
+  EXPECT_TRUE(instruction.src2.rm.immediate);
+  EXPECT_EQ(instruction.src2.rm.shamt5, 1u);
+}
+
+TEST(ParserTest, CanParseOperand2RegisterRegisterShift) {
+  const auto parsed = Parser{"add r0, r1, r2, ASR r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instruction = *ir::as_arithmetic(parsed.get());
+  EXPECT_FALSE(instruction.src2.immediate);
+  EXPECT_EQ(instruction.src2.rm.rm, ir::Register::R2);
+  EXPECT_EQ(instruction.src2.rm.sh, ir::Instruction::Asr);
+  EXPECT_FALSE(instruction.src2.rm.immediate);
+  EXPECT_EQ(instruction.src2.rm.rs, ir::Register::R3);
 }
