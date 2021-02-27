@@ -1,6 +1,7 @@
 #ifndef AAVM_PARSER_PARSER_H_
 #define AAVM_PARSER_PARSER_H_
 
+#include "fmt/format.h"
 #include "instruction.h"
 #include "instructions.h"
 #include "label.h"
@@ -8,7 +9,6 @@
 #include "operand2.h"
 #include "register.h"
 #include "textbuffer.h"
-#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <string_view>

@@ -27,6 +27,8 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_compile_definitions(AAVM_CLANG=0 AAVM_GCC=1 AAVM_MSVC=0)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   add_compile_definitions(AAVM_CLANG=0 AAVM_GCC=0 AAVM_MSVC=1)
+else()
+  add_compile_definitions(AAVM_CLANG=0 AAVM_GCC=0 AAVM_MSVC=0)
 endif()
 
 if(WIN32)
@@ -35,6 +37,8 @@ elseif(UNIX AND NOT APPLE)
   add_compile_definitions(AAVM_WINDOWS=0 AAVM_LINUX=1 AAVM_MACOS=0)
 elseif(APPLE)
   add_compile_definitions(AAVM_WINDOWS=0 AAVM_LINUX=0 AAVM_MACOS=1)
+else()
+  add_compile_definitions(AAVM_WINDOWS=0 AAVM_LINUX=0 AAVM_MACOS=0)
 endif()
 
 # Output compiled binaries and library files to appropriate directories

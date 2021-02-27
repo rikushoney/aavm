@@ -155,3 +155,27 @@ TEST(ParserTest, CanParseBlockMemoryInstruction) {
   EXPECT_EQ(instruction.register_list[0], ir::Register::R1);
   EXPECT_EQ(instruction.register_list[1], ir::Register::R2);
 }
+
+TEST(ParserTest, CanParseConditionSuffix) {
+  const auto parsed = Parser{"addeq r0, r1, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
+  EXPECT_FALSE(parsed->updatesflags());
+  EXPECT_EQ(parsed->condition(), ir::condition::EQ);
+}
+
+TEST(ParsedTest, CanParseUpdateFlag) {
+  const auto parsed = Parser{"adds r0, r1, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
+  EXPECT_TRUE(parsed->updatesflags());
+  EXPECT_EQ(parsed->condition(), ir::condition::AL);
+}
+
+TEST(ParsedTest, CanParseUpdateFlagAndConditionSuffix) {
+  const auto parsed = Parser{"addseq r0, r1, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
+  EXPECT_TRUE(parsed->updatesflags());
+  EXPECT_EQ(parsed->condition(), ir::condition::EQ);
+}
