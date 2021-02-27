@@ -11,11 +11,11 @@ public:
                         bool updatesflags)
       : op_{operation}, condition_{condition}, updates_{updatesflags} {}
 
-  auto operation() const { return op_; }
+  constexpr auto operation() const { return op_; }
 
-  auto condition() const { return condition_; }
+  constexpr auto condition() const { return condition_; }
 
-  auto updatesflags() const { return updates_; }
+  constexpr auto updatesflags() const { return updates_; }
 
   enum ArithmeticOperation {
     arithmetic_operations_start_ = 1,
