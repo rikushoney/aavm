@@ -18,8 +18,7 @@ TEST(ParserTest, CanParseArithmeticInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Add);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::ArithmeticInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_arithmetic(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rn, ir::Register::R1);
   EXPECT_TRUE(instruction.src2.immediate);
@@ -32,7 +31,7 @@ TEST(ParserTest, CanParseShiftInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Mov);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction = static_cast<ir::MoveInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_move(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_FALSE(instruction.src2.immediate);
   EXPECT_EQ(instruction.src2.rm.rm, ir::Register::R1);
@@ -47,8 +46,7 @@ TEST(ParserTest, CanParseMultiplyInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Mul);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::MultiplyInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_multiply(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rm, ir::Register::R1);
   EXPECT_EQ(instruction.rs, ir::Register::R2);
@@ -60,7 +58,7 @@ TEST(ParserTest, CanParseDivideInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Sdiv);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction = static_cast<ir::DivideInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_divide(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rn, ir::Register::R1);
   EXPECT_EQ(instruction.rm, ir::Register::R2);
@@ -72,7 +70,7 @@ TEST(ParserTest, CanParseMoveInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Mov);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction = static_cast<ir::MoveInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_move(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_TRUE(instruction.src2.immediate);
   EXPECT_EQ(instruction.src2.imm12, 1u);
@@ -84,8 +82,7 @@ TEST(ParserTest, CanParseComparisonInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Cmp);
   EXPECT_TRUE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::ComparisonInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_comparison(parsed.get());
   EXPECT_EQ(instruction.rn, ir::Register::R0);
   EXPECT_TRUE(instruction.src2.immediate);
   EXPECT_EQ(instruction.src2.imm12, 1u);
@@ -97,8 +94,7 @@ TEST(ParserTest, CanParseBitfieldInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Bfc);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::BitfieldInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_bitfield(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.lsb, 1u);
   EXPECT_EQ(instruction.width, 2u);
@@ -110,7 +106,7 @@ TEST(ParserTest, CanParseReverseInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Rbit);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction = static_cast<ir::ReverseInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_reverse(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rm, ir::Register::R1);
 }
@@ -121,6 +117,8 @@ TEST(ParserTest, CanParseBranchInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::B);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
+  const auto &instruction = *ir::as_branch(parsed.get());
+  (void)instruction;
 }
 
 TEST(ParserTest, CanParseSingleMemoryInstruction) {
@@ -129,8 +127,7 @@ TEST(ParserTest, CanParseSingleMemoryInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Ldr);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::SingleMemoryInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_single_memory(parsed.get());
   EXPECT_EQ(instruction.rd, ir::Register::R0);
   EXPECT_EQ(instruction.rn, ir::Register::R1);
   EXPECT_TRUE(std::holds_alternative<ir::Operand2>(instruction.source));
@@ -147,8 +144,7 @@ TEST(ParserTest, CanParseBlockMemoryInstruction) {
   EXPECT_EQ(parsed->operation(), ir::Instruction::Ldm);
   EXPECT_FALSE(parsed->updatesflags());
   EXPECT_EQ(parsed->condition(), ir::condition::AL);
-  const auto instruction =
-      static_cast<ir::BlockMemoryInstruction &>(*parsed.get());
+  const auto &instruction = *ir::as_block_memory(parsed.get());
   EXPECT_EQ(instruction.rn, ir::Register::R0);
   EXPECT_FALSE(instruction.writeback);
   EXPECT_EQ(instruction.register_list.size(), 2);

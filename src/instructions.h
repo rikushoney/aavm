@@ -6,6 +6,7 @@
 #include "label.h"
 #include "operand2.h"
 #include "register.h"
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -196,6 +197,66 @@ struct BlockMemoryInstruction : public Instruction {
       : Instruction{op, cond, false}, rn{Register::SP}, writeback{true},
         register_list{registers} {}
 };
+
+constexpr auto as_arithmetic(const Instruction *instruction) {
+  return Instruction::is_arithmetic_operation(instruction->operation())
+             ? static_cast<const ArithmeticInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_multiply(const Instruction *instruction) {
+  return Instruction::is_multiply_operation(instruction->operation())
+             ? static_cast<const MultiplyInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_divide(const Instruction *instruction) {
+  return Instruction::is_divide_operation(instruction->operation())
+             ? static_cast<const DivideInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_move(const Instruction *instruction) {
+  return Instruction::is_move_operation(instruction->operation())
+             ? static_cast<const MoveInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_comparison(const Instruction *instruction) {
+  return Instruction::is_comparison_operation(instruction->operation())
+             ? static_cast<const ComparisonInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_bitfield(const Instruction *instruction) {
+  return Instruction::is_bitfield_operation(instruction->operation())
+             ? static_cast<const BitfieldInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_reverse(const Instruction *instruction) {
+  return Instruction::is_reverse_operation(instruction->operation())
+             ? static_cast<const ReverseInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_branch(const Instruction *instruction) {
+  return Instruction::is_branch_operation(instruction->operation())
+             ? static_cast<const BranchInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_single_memory(const Instruction *instruction) {
+  return Instruction::is_single_memory_operation(instruction->operation())
+             ? static_cast<const SingleMemoryInstruction *>(instruction)
+             : nullptr;
+}
+
+constexpr auto as_block_memory(const Instruction *instruction) {
+  return Instruction::is_block_memory_operation(instruction->operation())
+             ? static_cast<const BlockMemoryInstruction *>(instruction)
+             : nullptr;
+}
 
 } // namespace aavm::ir
 
