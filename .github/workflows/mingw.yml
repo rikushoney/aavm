@@ -1,0 +1,46 @@
+name: windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.os}} 
+    strategy:
+      matrix:
+        os: [windows-latest]
+        build-type: [Debug, Release]
+        include: [{msystem: MINGW32, arch: i686},
+                  {msystem: MINGW64, arch: x86_64},
+                  {cc: gcc, cxx: g++},
+                  {cc: clang, cxx: clang++}]
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{matrix.msystem}}
+        update: true
+        install: >-
+          base-devel
+          git
+          mingw-w64-${{matrix.arch}}-${{matrix.cc}}
+          mingw-w64-${{matrix.arch}}-ninja
+          mingw-w64-${{matrix.arch}}-cmake
+
+    - name: Configure CMake
+      env:
+        CXX: ${{matrix.cxx}}
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: cmake --build . --config ${{matrix.build-type}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{matrix.build-type}}
