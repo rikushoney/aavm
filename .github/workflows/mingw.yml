@@ -1,4 +1,4 @@
-name: windows
+name: mingw
 
 on: [push, pull_request]
 
@@ -10,10 +10,19 @@ jobs:
       matrix:
         os: [windows-latest]
         build-type: [Debug, Release]
-        include: [{msystem: MINGW32, arch: i686},
-                  {msystem: MINGW64, arch: x86_64},
-                  {cc: gcc, cxx: g++},
-                  {cc: clang, cxx: clang++}]
+        msystem: [MINGW64, MINGW32]
+        arch: [x86_64, i686]
+        cc: [gcc, clang]
+        cxx: [g++, clang++]
+        exclude:
+          - msystem: MINGW64
+            arch: i686
+          - msystem: MINGW32
+            arch: x86_64
+          - cc: gcc
+            cxx: clang++
+          - cc: clang
+            cxx: g++
     defaults:
       run:
         shell: msys2 {0}
@@ -35,7 +44,7 @@ jobs:
       env:
         CXX: ${{matrix.cxx}}
       run: |
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+        cmake -B ${{github.workspace}}/build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
 
     - name: Build
       working-directory: ${{github.workspace}}/build
