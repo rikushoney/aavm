@@ -12,9 +12,7 @@ public:
       : op_{operation}, condition_{condition}, updates_{updatesflags} {}
 
   constexpr auto operation() const { return op_; }
-
   constexpr auto condition() const { return condition_; }
-
   constexpr auto updatesflags() const { return updates_; }
 
   enum ArithmeticOperation {

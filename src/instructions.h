@@ -13,249 +13,301 @@
 
 namespace aavm::ir {
 
-struct ArithmeticInstruction : public Instruction {
-  Register::Kind rd{};
-  Register::Kind rn{};
-  union {
-    Operand2 src2;
-    const Label *label;
-  };
-
+class ArithmeticInstruction : public Instruction {
+public:
   constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
                                   bool update, Register::Kind rd,
                                   Register::Kind rn, Operand2 src2)
-      : Instruction{op, cond, update}, rd{rd}, rn{rn}, src2{src2} {}
+      : Instruction{op, cond, update}, rd_{rd}, rn_{rn}, src2_{src2} {}
 
   constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
                                   Register::Kind rd, const Label *label)
-      : Instruction{op, cond, false}, rd{rd}, label{label} {}
+      : Instruction{op, cond, false}, rd_{rd}, label_{label} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rn() const { return rn_; }
+  constexpr auto src2() const { return src2_; }
+  constexpr auto label() const { return label_; }
+
+private:
+  Register::Kind rd_{};
+  Register::Kind rn_{};
+  union {
+    Operand2 src2_;
+    const Label *label_;
+  };
 };
 
-struct MultiplyInstruction : public Instruction {
-// clang, gcc and msvc support anonymous structs as an extension
-#if AAVM_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#pragma clang diagnostic ignored "-Wnested-anon-types"
-#elif AAVM_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#elif AAVM_MSVC
-#pragma warning(push)
-#pragma warning(disable : 4201)
-#endif
-  union {
-    Register::Kind rd;
-    struct {
-      Register::Kind rdlo;
-      Register::Kind rdhi;
-    };
-  };
-#if AAVM_CLANG
-#pragma clang diagnostic pop
-#elif AAVM_GCC
-#pragma GCC diagnostic pop
-#elif AAVM_MSVC
-#pragma warning(pop)
-#endif
-
-  Register::Kind rm{};
-  Register::Kind rs{};
-  Register::Kind rn{};
-
+class MultiplyInstruction : public Instruction {
+public:
   constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
                                 bool update, Register::Kind rd,
                                 Register::Kind rm, Register::Kind rs,
                                 Register::Kind rn = Register::R0)
-      : Instruction{op, cond, update}, rd{rd}, rm{rm}, rs{rs}, rn{rn} {}
+      : Instruction{op, cond, update}, rd_{rd}, rm_{rm}, rs_{rs}, rn_{rn} {}
 
   constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
                                 bool update,
                                 std::pair<Register::Kind, Register::Kind> rd,
                                 Register::Kind rm, Register::Kind rs)
-      : Instruction{op, cond, update}, rdlo{rd.first}, rdhi{rd.second}, rm{rm},
-        rs{rs} {}
+      : Instruction{op, cond, update},
+        registers_{rd.first, rd.second}, rm_{rm}, rs_{rs} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rdlo() const { return registers_.first; }
+  constexpr auto rdhi() const { return registers_.second; }
+  constexpr auto rm() const { return rm_; }
+  constexpr auto rs() const { return rs_; }
+  constexpr auto rn() const { return rn_; }
+
+private:
+  union {
+    Register::Kind rd_;
+    std::pair<Register::Kind, Register::Kind> registers_;
+  };
+
+  Register::Kind rm_{};
+  Register::Kind rs_{};
+  Register::Kind rn_{};
 };
 
-struct DivideInstruction : public Instruction {
-  Register::Kind rd{};
-  Register::Kind rn{};
-  Register::Kind rm{};
-
+class DivideInstruction : public Instruction {
+public:
   constexpr DivideInstruction(DivideOperation op, condition::Kind cond,
                               Register::Kind rd, Register::Kind rn,
                               Register::Kind rm)
-      : Instruction{op, cond, false}, rd{rd}, rn{rn}, rm{rm} {}
+      : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, rm_{rm} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rn() const { return rn_; }
+  constexpr auto rm() const { return rm_; }
+
+private:
+  Register::Kind rd_{};
+  Register::Kind rn_{};
+  Register::Kind rm_{};
 };
 
-struct MoveInstruction : public Instruction {
-  Register::Kind rd{};
-  union {
-    Operand2 src2;
-    unsigned imm16;
-  };
-
+class MoveInstruction : public Instruction {
+public:
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond, bool update,
                             Register::Kind rd, Operand2 src2)
-      : Instruction{op, cond, update}, rd{rd}, src2{src2} {}
+      : Instruction{op, cond, update}, rd_{rd}, src2_{src2} {}
 
   constexpr MoveInstruction(MoveOperation op, condition::Kind cond,
                             Register::Kind rd, unsigned imm16)
-      : Instruction{op, cond, false}, rd{rd}, imm16{imm16} {}
+      : Instruction{op, cond, false}, rd_{rd}, imm16_{imm16} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto src2() const { return src2_; }
+  constexpr auto imm16() const { return imm16_; }
+
+private:
+  Register::Kind rd_{};
+  union {
+    Operand2 src2_;
+    unsigned imm16_;
+  };
 };
 
-struct ComparisonInstruction : public Instruction {
-  Register::Kind rn{};
-  Operand2 src2;
-
+class ComparisonInstruction : public Instruction {
+public:
   constexpr ComparisonInstruction(ComparisonOperation op, condition::Kind cond,
                                   Register::Kind rn, Operand2 src2)
-      : Instruction{op, cond, true}, rn{rn}, src2{src2} {}
+      : Instruction{op, cond, true}, rn_{rn}, src2_{src2} {}
+
+  constexpr auto rn() const { return rn_; }
+  constexpr auto src2() const { return src2_; }
+
+private:
+  Register::Kind rn_{};
+  Operand2 src2_;
 };
 
-struct BitfieldInstruction : public Instruction {
-  Register::Kind rd{};
-  Register::Kind rn{};
-  unsigned lsb{};
-  unsigned width{};
-
+class BitfieldInstruction : public Instruction {
+public:
   constexpr BitfieldInstruction(BitfieldOperation op, condition::Kind cond,
                                 Register::Kind rd, Register::Kind rn,
                                 unsigned lsb, unsigned width)
-      : Instruction{op, cond, false}, rd{rd}, rn{rn}, lsb{lsb}, width{width} {}
+      : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, lsb_{lsb}, width_{
+                                                                       width} {}
 
   constexpr BitfieldInstruction(BitfieldOperation op, condition::Kind cond,
                                 Register::Kind rd, unsigned lsb, unsigned width)
-      : Instruction{op, cond, false}, rd{rd}, lsb{lsb}, width{width} {}
+      : Instruction{op, cond, false}, rd_{rd}, lsb_{lsb}, width_{width} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rn() const { return rn_; }
+  constexpr auto lsb() const { return lsb_; }
+  constexpr auto width() const { return width_; }
+
+private:
+  Register::Kind rd_{};
+  Register::Kind rn_{};
+  unsigned lsb_{};
+  unsigned width_{};
 };
 
-struct ReverseInstruction : public Instruction {
-  Register::Kind rd{};
-  Register::Kind rm{};
-
+class ReverseInstruction : public Instruction {
+public:
   constexpr ReverseInstruction(ReverseOperation op, condition::Kind cond,
                                Register::Kind rd, Register::Kind rm)
-      : Instruction{op, cond, false}, rd{rd}, rm{rm} {}
+      : Instruction{op, cond, false}, rd_{rd}, rm_{rm} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rm() const { return rm_; }
+
+private:
+  Register::Kind rd_{};
+  Register::Kind rm_{};
 };
 
-struct BranchInstruction : public Instruction {
-  const Label *label{};
-  Register::Kind rm{};
-  Register::Kind rn{};
-
+class BranchInstruction : public Instruction {
+public:
   constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
                               const Label *label)
-      : Instruction{op, cond, false}, label{label} {}
+      : Instruction{op, cond, false}, label_{label} {}
 
   constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
                               Register::Kind rm)
-      : Instruction{op, cond, false}, rm{rm} {}
+      : Instruction{op, cond, false}, rm_{rm} {}
 
   constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
                               Register::Kind rn, const Label *label)
-      : Instruction{op, cond, false}, label{label}, rn{rn} {}
+      : Instruction{op, cond, false}, label_{label}, rn_{rn} {}
+
+  constexpr auto label() const { return label_; }
+  constexpr auto rm() const { return rm_; }
+  constexpr auto rn() const { return rn_; }
+
+private:
+  const Label *label_{};
+  Register::Kind rm_{};
+  Register::Kind rn_{};
 };
 
-struct SingleMemoryInstruction : public Instruction {
-  Register::Kind rd{};
-  Register::Kind rn{};
-  std::variant<Operand2, const Label *, unsigned> source;
-  enum class IndexMode { PostIndex, Offset, PreIndex } indexmode{};
-  bool subtract{};
+class SingleMemoryInstruction : public Instruction {
+public:
+  enum class IndexMode { PostIndex, Offset, PreIndex };
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
                                     condition::Kind cond, Register::Kind rd,
                                     Register::Kind rn, Operand2 src2,
                                     IndexMode mode, bool subtract)
-      : Instruction{op, cond, false}, rd{rd}, rn{rn}, source{src2},
-        indexmode{mode}, subtract{subtract} {}
+      : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, source_{src2},
+        indexmode_{mode}, subtract_{subtract} {}
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
                                     condition::Kind cond, Register::Kind rd,
                                     const Label *label)
-      : Instruction{op, cond, false}, rd{rd}, source{label} {}
+      : Instruction{op, cond, false}, rd_{rd}, source_{label} {}
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
                                     condition::Kind cond, Register::Kind rd,
                                     unsigned imm32)
-      : Instruction{op, cond, false}, rd{rd}, source{imm32} {}
+      : Instruction{op, cond, false}, rd_{rd}, source_{imm32} {}
+
+  constexpr auto rd() const { return rd_; }
+  constexpr auto rn() const { return rn_; }
+  constexpr auto source() const { return source_; }
+  constexpr auto indexmode() const { return indexmode_; }
+  constexpr auto subtract() const { return subtract_; }
+
+private:
+  Register::Kind rd_{};
+  Register::Kind rn_{};
+  std::variant<Operand2, const Label *, unsigned> source_;
+  IndexMode indexmode_{};
+  bool subtract_{};
 };
 
-struct BlockMemoryInstruction : public Instruction {
-  Register::Kind rn{};
-  bool writeback{};
-  std::vector<Register::Kind> register_list{};
-
+class BlockMemoryInstruction : public Instruction {
+public:
   /* constexpr */ BlockMemoryInstruction(
       BlockMemoryOperation op, condition::Kind cond, Register::Kind rn,
       bool writeback, const std::vector<Register::Kind> &registers)
-      : Instruction{op, cond, false}, rn{rn}, writeback{writeback},
-        register_list{registers} {}
+      : Instruction{op, cond, false}, rn_{rn}, writeback_{writeback},
+        register_list_{registers} {}
 
   /* constexpr */ BlockMemoryInstruction(
       BlockMemoryOperation op, condition::Kind cond,
       const std::vector<Register::Kind> &registers)
-      : Instruction{op, cond, false}, rn{Register::SP}, writeback{true},
-        register_list{registers} {}
+      : Instruction{op, cond, false}, rn_{Register::SP}, writeback_{true},
+        register_list_{registers} {}
+
+  constexpr auto rn() const { return rn_; }
+  constexpr auto writeback() const { return writeback_; }
+  constexpr auto &register_list() const { return register_list_; }
+
+private:
+  Register::Kind rn_{};
+  bool writeback_{};
+  std::vector<Register::Kind> register_list_{};
 };
 
-constexpr auto as_arithmetic(const Instruction *instruction) {
-  return Instruction::is_arithmetic_operation(instruction->operation())
-             ? static_cast<const ArithmeticInstruction *>(instruction)
+using InstructionVariant =
+    std::variant<Instruction, ArithmeticInstruction, MultiplyInstruction,
+                 DivideInstruction, MoveInstruction, ComparisonInstruction,
+                 BitfieldInstruction, ReverseInstruction, BranchInstruction,
+                 SingleMemoryInstruction, BlockMemoryInstruction>;
+
+constexpr auto as_arithmetic(const InstructionVariant &instruction) {
+  return std::holds_alternative<ArithmeticInstruction>(instruction)
+             ? &std::get<ArithmeticInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_multiply(const Instruction *instruction) {
-  return Instruction::is_multiply_operation(instruction->operation())
-             ? static_cast<const MultiplyInstruction *>(instruction)
+constexpr auto as_multiply(const InstructionVariant &instruction) {
+  return std::holds_alternative<MultiplyInstruction>(instruction)
+             ? &std::get<MultiplyInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_divide(const Instruction *instruction) {
-  return Instruction::is_divide_operation(instruction->operation())
-             ? static_cast<const DivideInstruction *>(instruction)
+constexpr auto as_divide(const InstructionVariant &instruction) {
+  return std::holds_alternative<DivideInstruction>(instruction)
+             ? &std::get<DivideInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_move(const Instruction *instruction) {
-  return Instruction::is_move_operation(instruction->operation())
-             ? static_cast<const MoveInstruction *>(instruction)
+constexpr auto as_move(const InstructionVariant &instruction) {
+  return std::holds_alternative<MoveInstruction>(instruction)
+             ? &std::get<MoveInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_comparison(const Instruction *instruction) {
-  return Instruction::is_comparison_operation(instruction->operation())
-             ? static_cast<const ComparisonInstruction *>(instruction)
+constexpr auto as_comparison(const InstructionVariant &instruction) {
+  return std::holds_alternative<ComparisonInstruction>(instruction)
+             ? &std::get<ComparisonInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_bitfield(const Instruction *instruction) {
-  return Instruction::is_bitfield_operation(instruction->operation())
-             ? static_cast<const BitfieldInstruction *>(instruction)
+constexpr auto as_bitfield(const InstructionVariant &instruction) {
+  return std::holds_alternative<BitfieldInstruction>(instruction)
+             ? &std::get<BitfieldInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_reverse(const Instruction *instruction) {
-  return Instruction::is_reverse_operation(instruction->operation())
-             ? static_cast<const ReverseInstruction *>(instruction)
+constexpr auto as_reverse(const InstructionVariant &instruction) {
+  return std::holds_alternative<ReverseInstruction>(instruction)
+             ? &std::get<ReverseInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_branch(const Instruction *instruction) {
-  return Instruction::is_branch_operation(instruction->operation())
-             ? static_cast<const BranchInstruction *>(instruction)
+constexpr auto as_branch(const InstructionVariant &instruction) {
+  return std::holds_alternative<BranchInstruction>(instruction)
+             ? &std::get<BranchInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_single_memory(const Instruction *instruction) {
-  return Instruction::is_single_memory_operation(instruction->operation())
-             ? static_cast<const SingleMemoryInstruction *>(instruction)
+constexpr auto as_single_memory(const InstructionVariant &instruction) {
+  return std::holds_alternative<SingleMemoryInstruction>(instruction)
+             ? &std::get<SingleMemoryInstruction>(instruction)
              : nullptr;
 }
 
-constexpr auto as_block_memory(const Instruction *instruction) {
-  return Instruction::is_block_memory_operation(instruction->operation())
-             ? static_cast<const BlockMemoryInstruction *>(instruction)
+constexpr auto as_block_memory(const InstructionVariant &instruction) {
+  return std::holds_alternative<BlockMemoryInstruction>(instruction)
+             ? &std::get<BlockMemoryInstruction>(instruction)
              : nullptr;
 }
 

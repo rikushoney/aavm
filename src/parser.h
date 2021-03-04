@@ -26,7 +26,7 @@ public:
 
   // TODO: make this private and make the parser return a "module" instead with
   // all parsed instructions and directives etc.
-  std::unique_ptr<ir::Instruction> parse_instruction();
+  std::unique_ptr<ir::InstructionVariant> parse_instruction();
 
 private:
   template <typename Pred>
@@ -74,27 +74,27 @@ private:
   std::optional<const ir::Label *> parse_label();
 
 protected:
-  std::unique_ptr<ir::ArithmeticInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_arithmetic(ir::Instruction::ArithmeticOperation op);
-  std::unique_ptr<ir::MoveInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_shift(ir::Instruction::ShiftOperation op);
-  std::unique_ptr<ir::MultiplyInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_multiply(ir::Instruction::MultiplyOperation op);
-  std::unique_ptr<ir::DivideInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_divide(ir::Instruction::DivideOperation op);
-  std::unique_ptr<ir::MoveInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_move(ir::Instruction::MoveOperation op);
-  std::unique_ptr<ir::ComparisonInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_comparison(ir::Instruction::ComparisonOperation op);
-  std::unique_ptr<ir::BitfieldInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_bitfield(ir::Instruction::BitfieldOperation op);
-  std::unique_ptr<ir::ReverseInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_reverse(ir::Instruction::ReverseOperation op);
-  std::unique_ptr<ir::BranchInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_branch(ir::Instruction::BranchOperation op);
-  std::unique_ptr<ir::SingleMemoryInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_single_memory(ir::Instruction::SingleMemoryOperation op);
-  std::unique_ptr<ir::BlockMemoryInstruction>
+  std::unique_ptr<ir::InstructionVariant>
   parse_block_memory(ir::Instruction::BlockMemoryOperation op);
 
 private:
