@@ -8,15 +8,16 @@ jobs:
     runs-on: ${{matrix.os}} 
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-2016, windows-2019]
         build-type: [Debug, Release]
+        platform: [Win32, x64]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Configure CMake
       run: |
-        cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+        cmake -B "${{github.workspace}}/build" -A ${{matrix.platform}} -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
 
     - name: Build
       working-directory: ${{github.workspace}}/build
