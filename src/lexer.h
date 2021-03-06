@@ -20,7 +20,7 @@ public:
 
   constexpr auto column() const { return column_; }
   constexpr auto line() const { return line_; }
-  constexpr auto cursor() const { return cursor_; }
+  /* constexpr */ auto cursor() const { return cursor_; }
 
 private:
   std::size_t column_;
