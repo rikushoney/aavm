@@ -67,7 +67,7 @@ private:
   const ir::Label *find_label(std::string_view name);
 
   bool parse_update_flag();
-  ir::condition::Kind parse_condition();
+  ir::Condition::Kind parse_condition();
   std::optional<unsigned> parse_immediate(bool numbersym = true);
   std::optional<ir::Register::Kind> parse_register();
   std::optional<ir::Operand2> parse_operand2();

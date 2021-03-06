@@ -10,10 +10,20 @@
 
 namespace aavm::parser {
 
-struct SourceLocation {
-  std::size_t column;
-  std::size_t line;
-  Charbuffer::iterator cursor;
+class SourceLocation {
+public:
+  constexpr SourceLocation(std::size_t column, std::size_t line,
+                           Charbuffer::iterator cursor)
+      : column_{column}, line_{line}, cursor_{cursor} {}
+
+  constexpr auto column() const { return column_; }
+  constexpr auto line() const { return line_; }
+  constexpr auto cursor() const { return cursor_; }
+
+private:
+  std::size_t column_;
+  std::size_t line_;
+  Charbuffer::iterator cursor_;
 };
 
 class Lexer {

@@ -15,12 +15,12 @@ namespace aavm::ir {
 
 class ArithmeticInstruction : public Instruction {
 public:
-  constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
+  constexpr ArithmeticInstruction(ArithmeticOperation op, Condition::Kind cond,
                                   bool update, Register::Kind rd,
                                   Register::Kind rn, Operand2 src2)
       : Instruction{op, cond, update}, rd_{rd}, rn_{rn}, src2_{src2} {}
 
-  constexpr ArithmeticInstruction(ArithmeticOperation op, condition::Kind cond,
+  constexpr ArithmeticInstruction(ArithmeticOperation op, Condition::Kind cond,
                                   Register::Kind rd, const Label *label)
       : Instruction{op, cond, false}, rd_{rd}, label_{label} {}
 
@@ -40,13 +40,13 @@ private:
 
 class MultiplyInstruction : public Instruction {
 public:
-  constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
+  constexpr MultiplyInstruction(MultiplyOperation op, Condition::Kind cond,
                                 bool update, Register::Kind rd,
                                 Register::Kind rm, Register::Kind rs,
                                 Register::Kind rn = Register::R0)
       : Instruction{op, cond, update}, rd_{rd}, rm_{rm}, rs_{rs}, rn_{rn} {}
 
-  constexpr MultiplyInstruction(MultiplyOperation op, condition::Kind cond,
+  constexpr MultiplyInstruction(MultiplyOperation op, Condition::Kind cond,
                                 bool update,
                                 std::pair<Register::Kind, Register::Kind> rd,
                                 Register::Kind rm, Register::Kind rs)
@@ -73,7 +73,7 @@ private:
 
 class DivideInstruction : public Instruction {
 public:
-  constexpr DivideInstruction(DivideOperation op, condition::Kind cond,
+  constexpr DivideInstruction(DivideOperation op, Condition::Kind cond,
                               Register::Kind rd, Register::Kind rn,
                               Register::Kind rm)
       : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, rm_{rm} {}
@@ -90,11 +90,11 @@ private:
 
 class MoveInstruction : public Instruction {
 public:
-  constexpr MoveInstruction(MoveOperation op, condition::Kind cond, bool update,
+  constexpr MoveInstruction(MoveOperation op, Condition::Kind cond, bool update,
                             Register::Kind rd, Operand2 src2)
       : Instruction{op, cond, update}, rd_{rd}, src2_{src2} {}
 
-  constexpr MoveInstruction(MoveOperation op, condition::Kind cond,
+  constexpr MoveInstruction(MoveOperation op, Condition::Kind cond,
                             Register::Kind rd, unsigned imm16)
       : Instruction{op, cond, false}, rd_{rd}, imm16_{imm16} {}
 
@@ -112,7 +112,7 @@ private:
 
 class ComparisonInstruction : public Instruction {
 public:
-  constexpr ComparisonInstruction(ComparisonOperation op, condition::Kind cond,
+  constexpr ComparisonInstruction(ComparisonOperation op, Condition::Kind cond,
                                   Register::Kind rn, Operand2 src2)
       : Instruction{op, cond, true}, rn_{rn}, src2_{src2} {}
 
@@ -126,13 +126,13 @@ private:
 
 class BitfieldInstruction : public Instruction {
 public:
-  constexpr BitfieldInstruction(BitfieldOperation op, condition::Kind cond,
+  constexpr BitfieldInstruction(BitfieldOperation op, Condition::Kind cond,
                                 Register::Kind rd, Register::Kind rn,
                                 unsigned lsb, unsigned width)
       : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, lsb_{lsb}, width_{
                                                                        width} {}
 
-  constexpr BitfieldInstruction(BitfieldOperation op, condition::Kind cond,
+  constexpr BitfieldInstruction(BitfieldOperation op, Condition::Kind cond,
                                 Register::Kind rd, unsigned lsb, unsigned width)
       : Instruction{op, cond, false}, rd_{rd}, lsb_{lsb}, width_{width} {}
 
@@ -150,7 +150,7 @@ private:
 
 class ReverseInstruction : public Instruction {
 public:
-  constexpr ReverseInstruction(ReverseOperation op, condition::Kind cond,
+  constexpr ReverseInstruction(ReverseOperation op, Condition::Kind cond,
                                Register::Kind rd, Register::Kind rm)
       : Instruction{op, cond, false}, rd_{rd}, rm_{rm} {}
 
@@ -164,15 +164,15 @@ private:
 
 class BranchInstruction : public Instruction {
 public:
-  constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
+  constexpr BranchInstruction(BranchOperation op, Condition::Kind cond,
                               const Label *label)
       : Instruction{op, cond, false}, label_{label} {}
 
-  constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
+  constexpr BranchInstruction(BranchOperation op, Condition::Kind cond,
                               Register::Kind rm)
       : Instruction{op, cond, false}, rm_{rm} {}
 
-  constexpr BranchInstruction(BranchOperation op, condition::Kind cond,
+  constexpr BranchInstruction(BranchOperation op, Condition::Kind cond,
                               Register::Kind rn, const Label *label)
       : Instruction{op, cond, false}, label_{label}, rn_{rn} {}
 
@@ -191,19 +191,19 @@ public:
   enum class IndexMode { PostIndex, Offset, PreIndex };
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
-                                    condition::Kind cond, Register::Kind rd,
+                                    Condition::Kind cond, Register::Kind rd,
                                     Register::Kind rn, Operand2 src2,
                                     IndexMode mode, bool subtract)
       : Instruction{op, cond, false}, rd_{rd}, rn_{rn}, source_{src2},
         indexmode_{mode}, subtract_{subtract} {}
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
-                                    condition::Kind cond, Register::Kind rd,
+                                    Condition::Kind cond, Register::Kind rd,
                                     const Label *label)
       : Instruction{op, cond, false}, rd_{rd}, source_{label} {}
 
   constexpr SingleMemoryInstruction(SingleMemoryOperation op,
-                                    condition::Kind cond, Register::Kind rd,
+                                    Condition::Kind cond, Register::Kind rd,
                                     unsigned imm32)
       : Instruction{op, cond, false}, rd_{rd}, source_{imm32} {}
 
@@ -224,13 +224,13 @@ private:
 class BlockMemoryInstruction : public Instruction {
 public:
   /* constexpr */ BlockMemoryInstruction(
-      BlockMemoryOperation op, condition::Kind cond, Register::Kind rn,
+      BlockMemoryOperation op, Condition::Kind cond, Register::Kind rn,
       bool writeback, const std::vector<Register::Kind> &registers)
       : Instruction{op, cond, false}, rn_{rn}, writeback_{writeback},
         register_list_{registers} {}
 
   /* constexpr */ BlockMemoryInstruction(
-      BlockMemoryOperation op, condition::Kind cond,
+      BlockMemoryOperation op, Condition::Kind cond,
       const std::vector<Register::Kind> &registers)
       : Instruction{op, cond, false}, rn_{Register::SP}, writeback_{true},
         register_list_{registers} {}

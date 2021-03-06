@@ -16,37 +16,37 @@ constexpr unsigned map_token(token::Kind token) {
 
   switch (token) {
   case kw_eq:
-    return condition::EQ;
+    return Condition::EQ;
   case kw_ne:
-    return condition::NE;
+    return Condition::NE;
   case kw_cs:
   case kw_hs:
-    return condition::CS;
+    return Condition::CS;
   case kw_cc:
   case kw_lo:
-    return condition::CC;
+    return Condition::CC;
   case kw_mi:
-    return condition::MI;
+    return Condition::MI;
   case kw_pl:
-    return condition::PL;
+    return Condition::PL;
   case kw_vs:
-    return condition::VS;
+    return Condition::VS;
   case kw_vc:
-    return condition::VC;
+    return Condition::VC;
   case kw_hi:
-    return condition::HI;
+    return Condition::HI;
   case kw_ls:
-    return condition::LS;
+    return Condition::LS;
   case kw_ge:
-    return condition::GE;
+    return Condition::GE;
   case kw_lt:
-    return condition::LT;
+    return Condition::LT;
   case kw_gt:
-    return condition::GT;
+    return Condition::GT;
   case kw_le:
-    return condition::LE;
+    return Condition::LE;
   case kw_al:
-    return condition::AL;
+    return Condition::AL;
   case kw_r0:
     return Register::R0;
   case kw_r1:
@@ -269,13 +269,13 @@ std::unique_ptr<InstructionVariant> Parser::parse_instruction() {
 
   // return mov r0, r0
   return std::make_unique<InstructionVariant>(MoveInstruction{
-      Instruction::Mov, condition::AL, false, Register::Kind::R0,
+      Instruction::Mov, Condition::AL, false, Register::Kind::R0,
       Operand2{ShiftedRegister{Register::Kind::R0, Instruction::Lsl, 0u}}});
 }
 
 const Label *Parser::find_label(std::string_view name) {
   for (const auto &l : labels_) {
-    if (name == l.name) {
+    if (name == l.name()) {
       return &l;
     }
   }
@@ -292,14 +292,14 @@ bool Parser::parse_update_flag() {
   return update;
 }
 
-condition::Kind Parser::parse_condition() {
+Condition::Kind Parser::parse_condition() {
   if (is_condition(lexer_.token_kind())) {
     const auto cond = map_token(lexer_.token_kind());
     lexer_.get_token();
-    return static_cast<condition::Kind>(cond);
+    return static_cast<Condition::Kind>(cond);
   }
 
-  return condition::AL;
+  return Condition::AL;
 }
 
 std::optional<unsigned> Parser::parse_immediate(bool numbersym) {

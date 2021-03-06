@@ -7,7 +7,7 @@ namespace aavm::ir {
 
 class Instruction {
 public:
-  constexpr Instruction(unsigned operation, condition::Kind condition,
+  constexpr Instruction(unsigned operation, Condition::Kind condition,
                         bool updatesflags)
       : op_{operation}, condition_{condition}, updates_{updatesflags} {}
 
@@ -185,7 +185,7 @@ public:
 
 private:
   unsigned op_;
-  condition::Kind condition_;
+  Condition::Kind condition_;
   bool updates_;
 };
 
