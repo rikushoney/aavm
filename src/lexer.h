@@ -12,8 +12,10 @@ namespace aavm::parser {
 
 class SourceLocation {
 public:
-  constexpr SourceLocation(std::size_t column, std::size_t line,
-                           Charbuffer::iterator cursor)
+  // MSVC does not implement std::vector<char>::const_iterator (aka
+  // Charbuffer::iterator) as constexpr yet
+  /* constexpr */ SourceLocation(std::size_t column, std::size_t line,
+                                 Charbuffer::iterator cursor)
       : column_{column}, line_{line}, cursor_{cursor} {}
 
   constexpr auto column() const { return column_; }
@@ -35,8 +37,7 @@ public:
   constexpr auto int_value() const { return int_value_; }
   constexpr auto string_value() const { return string_value_; }
 
-  // MSVC does not implement std::vector<char>::const_iterator (aka
-  // Charbuffer::iterator) as constexpr yet
+  // see line 15
   /* constexpr */ auto source_location() const {
     return SourceLocation{column_number_, line_number_, cursor_};
   }
