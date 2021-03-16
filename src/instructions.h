@@ -245,69 +245,71 @@ private:
   std::vector<Register::Kind> register_list_{};
 };
 
-using InstructionVariant =
-    std::variant<Instruction, ArithmeticInstruction, MultiplyInstruction,
-                 DivideInstruction, MoveInstruction, ComparisonInstruction,
-                 BitfieldInstruction, ReverseInstruction, BranchInstruction,
-                 SingleMemoryInstruction, BlockMemoryInstruction>;
+template <typename T> constexpr auto cast(const Instruction * /*instr*/) {
+  return nullptr;
+}
 
-constexpr auto as_arithmetic(const InstructionVariant &instruction) {
-  return std::holds_alternative<ArithmeticInstruction>(instruction)
-             ? &std::get<ArithmeticInstruction>(instruction)
+template <>
+constexpr auto cast<ArithmeticInstruction>(const Instruction *instr) {
+  return Instruction::is_arithmetic_operation(instr->operation())
+             ? static_cast<const ArithmeticInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_multiply(const InstructionVariant &instruction) {
-  return std::holds_alternative<MultiplyInstruction>(instruction)
-             ? &std::get<MultiplyInstruction>(instruction)
+template <> constexpr auto cast<MultiplyInstruction>(const Instruction *instr) {
+  return Instruction::is_multiply_operation(instr->operation())
+             ? static_cast<const MultiplyInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_divide(const InstructionVariant &instruction) {
-  return std::holds_alternative<DivideInstruction>(instruction)
-             ? &std::get<DivideInstruction>(instruction)
+template <> constexpr auto cast<DivideInstruction>(const Instruction *instr) {
+  return Instruction::is_divide_operation(instr->operation())
+             ? static_cast<const DivideInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_move(const InstructionVariant &instruction) {
-  return std::holds_alternative<MoveInstruction>(instruction)
-             ? &std::get<MoveInstruction>(instruction)
+template <> constexpr auto cast<MoveInstruction>(const Instruction *instr) {
+  return Instruction::is_move_operation(instr->operation())
+             ? static_cast<const MoveInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_comparison(const InstructionVariant &instruction) {
-  return std::holds_alternative<ComparisonInstruction>(instruction)
-             ? &std::get<ComparisonInstruction>(instruction)
+template <>
+constexpr auto cast<ComparisonInstruction>(const Instruction *instr) {
+  return Instruction::is_comparison_operation(instr->operation())
+             ? static_cast<const ComparisonInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_bitfield(const InstructionVariant &instruction) {
-  return std::holds_alternative<BitfieldInstruction>(instruction)
-             ? &std::get<BitfieldInstruction>(instruction)
+template <> constexpr auto cast<BitfieldInstruction>(const Instruction *instr) {
+  return Instruction::is_bitfield_operation(instr->operation())
+             ? static_cast<const BitfieldInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_reverse(const InstructionVariant &instruction) {
-  return std::holds_alternative<ReverseInstruction>(instruction)
-             ? &std::get<ReverseInstruction>(instruction)
+template <> constexpr auto cast<ReverseInstruction>(const Instruction *instr) {
+  return Instruction::is_reverse_operation(instr->operation())
+             ? static_cast<const ReverseInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_branch(const InstructionVariant &instruction) {
-  return std::holds_alternative<BranchInstruction>(instruction)
-             ? &std::get<BranchInstruction>(instruction)
+template <> constexpr auto cast<BranchInstruction>(const Instruction *instr) {
+  return Instruction::is_branch_operation(instr->operation())
+             ? static_cast<const BranchInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_single_memory(const InstructionVariant &instruction) {
-  return std::holds_alternative<SingleMemoryInstruction>(instruction)
-             ? &std::get<SingleMemoryInstruction>(instruction)
+template <>
+constexpr auto cast<SingleMemoryInstruction>(const Instruction *instr) {
+  return Instruction::is_single_memory_operation(instr->operation())
+             ? static_cast<const SingleMemoryInstruction *>(instr)
              : nullptr;
 }
 
-constexpr auto as_block_memory(const InstructionVariant &instruction) {
-  return std::holds_alternative<BlockMemoryInstruction>(instruction)
-             ? &std::get<BlockMemoryInstruction>(instruction)
+template <>
+constexpr auto cast<BlockMemoryInstruction>(const Instruction *instr) {
+  return Instruction::is_block_memory_operation(instr->operation())
+             ? static_cast<const BlockMemoryInstruction *>(instr)
              : nullptr;
 }
 
