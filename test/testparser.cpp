@@ -217,3 +217,39 @@ TEST(ParserTest, CanParseOperand2RegisterRegisterShift) {
   EXPECT_FALSE(instr.src2().rm().immediate());
   EXPECT_EQ(instr.src2().rm().rs(), ir::Register::R3);
 }
+
+TEST(ParserTest, CanParseMlsInstruction) {
+  const auto parsed = Parser{"mls r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
+  EXPECT_FALSE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::AL);
+}
+
+TEST(ParserTest, CanParseMlsWithConditionInstruction) {
+  const auto parsed = Parser{"mlseq r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
+  EXPECT_FALSE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::EQ);
+}
+
+TEST(ParserTest, CanParseMlsWithUpdatesFlagInstruction) {
+  const auto parsed = Parser{"mlss r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
+  EXPECT_TRUE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::AL);
+}
+
+TEST(ParserTest, CanParseMlsWithConditionAndUpdatesFlagInstruction) {
+  const auto parsed = Parser{"mlsseq r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
+  EXPECT_TRUE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::EQ);
+}

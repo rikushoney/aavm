@@ -52,6 +52,7 @@ token::Kind Lexer::lex_integer() {
 }
 
 token::Kind Lexer::lex_identifier() {
+  using namespace std::string_view_literals;
   const auto id_start = std::prev(cursor_);
   auto id_length = 0;
   for (; is_valid_identifier(current_char_); ++id_length) {
@@ -65,7 +66,7 @@ token::Kind Lexer::lex_identifier() {
   auto maybe_instruction = std::string_view{lowercase_string};
 
   auto condition = keyword::none;
-  if (maybe_instruction.length() > 2) {
+  if (maybe_instruction != "mls"sv && maybe_instruction.length() > 2) {
     const auto maybe_condition =
         maybe_instruction.substr(maybe_instruction.length() - 2);
     condition = keyword::find(std::string_view{to_lower(maybe_condition)});
@@ -74,7 +75,8 @@ token::Kind Lexer::lex_identifier() {
     }
   }
 
-  const auto updates_flags = to_lower(maybe_instruction.back()) == 's';
+  const auto updates_flags = (maybe_instruction != "mls"sv) &&
+                             (to_lower(maybe_instruction.back()) == 's');
   if (updates_flags) {
     maybe_instruction.remove_suffix(1);
   }

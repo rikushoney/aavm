@@ -462,9 +462,6 @@ Parser::parse_multiply(Instruction::MultiplyOperation op) {
   lexer_.get_token();
 
   const auto updates = parse_update_flag();
-  if (updates && op == Instruction::Mls) {
-    return nullptr;
-  }
   const auto cond = parse_condition();
 
   switch (op) {
@@ -491,10 +488,6 @@ Parser::parse_multiply(Instruction::MultiplyOperation op) {
       break;
     }
     const auto rn = parse_register();
-    if (!rn || !ensure_comma()) {
-      break;
-    }
-
     return rn ? std::make_unique<MultiplyInstruction>(op, cond, updates, *rs,
                                                       *rm, *rs, *rn)
               : nullptr;
