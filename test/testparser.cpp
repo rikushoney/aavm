@@ -253,3 +253,39 @@ TEST(ParserTest, CanParseMlsWithConditionAndUpdatesFlagInstruction) {
   EXPECT_TRUE(instr.updatesflags());
   EXPECT_EQ(instr.condition(), ir::Condition::EQ);
 }
+
+TEST(ParserTest, CanParseTeqInstruction) {
+  const auto parsed = Parser{"teq r0, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::ComparisonInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Teq);
+  EXPECT_TRUE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::AL);
+}
+
+TEST(ParserTest, CanParseTeqWithConditionInstruction) {
+  const auto parsed = Parser{"teqeq r0, #1"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::ComparisonInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Teq);
+  EXPECT_TRUE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::EQ);
+}
+
+TEST(ParserTest, CanParseMultiplyAccumulateInstruction) {
+  const auto parsed = Parser{"umlal r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Umlal);
+  EXPECT_FALSE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::AL);
+}
+
+TEST(ParserTest, CanParseMultiplyAccumulateWithConditionInstruction) {
+  const auto parsed = Parser{"umlalal r0, r1, r2, r3"_tb}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
+  const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
+  EXPECT_EQ(instr.operation(), ir::Instruction::Umlal);
+  EXPECT_FALSE(instr.updatesflags());
+  EXPECT_EQ(instr.condition(), ir::Condition::AL);
+}

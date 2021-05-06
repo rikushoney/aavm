@@ -66,7 +66,10 @@ token::Kind Lexer::lex_identifier() {
   auto maybe_instruction = std::string_view{lowercase_string};
 
   auto condition = keyword::none;
-  if (maybe_instruction != "mls"sv && maybe_instruction.length() > 2) {
+  // all these mnemonics end with valid condition suffixes
+  if (!(maybe_instruction == "mls"sv || maybe_instruction == "teq"sv ||
+        maybe_instruction == "umlal"sv || maybe_instruction == "smlal"sv) &&
+      maybe_instruction.length() > 2) {
     const auto maybe_condition =
         maybe_instruction.substr(maybe_instruction.length() - 2);
     condition = keyword::find(std::string_view{to_lower(maybe_condition)});
