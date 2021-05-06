@@ -1,8 +1,8 @@
 #ifndef AAVM_KEYWORD_H_
 #define AAVM_KEYWORD_H_
 
-#include "stl_array.h"
 #include "token.h"
+#include <array>
 #include <string_view>
 
 namespace aavm::keyword {
@@ -13,7 +13,7 @@ using namespace aavm::token;
 using namespace std::string_view_literals;
 
 constexpr auto keyword_lookup_matrix_ =
-    stl::make_array<std::pair<std::string_view, Kind>>(
+    std::to_array<std::pair<std::string_view, Kind>>(
         {{"eq"sv, kw_eq},       {"ne"sv, kw_ne},       {"cs"sv, kw_cs},
          {"hs"sv, kw_hs},       {"cc"sv, kw_cc},       {"lo"sv, kw_lo},
          {"mi"sv, kw_mi},       {"pl"sv, kw_pl},       {"vs"sv, kw_vs},
