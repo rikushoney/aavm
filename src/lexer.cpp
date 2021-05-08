@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include "character.h"
+#include "compiler.h"
 #include "keyword.h"
 #include "token.h"
 #include <iterator>
@@ -171,4 +172,6 @@ token::Kind Lexer::lex_token() {
     get_char();
     return tok;
   }
+
+  aavm_unreachable();
 }
