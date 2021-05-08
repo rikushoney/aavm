@@ -57,7 +57,7 @@ inline auto aavm_unreachable() {
 #if AAVM_GCC || AAVM_CLANG
   __builtin_unreachable();
 #elif AAVM_MSVC
-  __assume(0)
+  __assume(0);
 #else
   (void);
 #endif
