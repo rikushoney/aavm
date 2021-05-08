@@ -19,7 +19,7 @@ jobs:
       env:
         CXX: ${{matrix.cxx}}
       run: |
-        cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+        cmake -B "${{github.workspace}}/build" -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
 
     - name: Build
       working-directory: ${{github.workspace}}/build

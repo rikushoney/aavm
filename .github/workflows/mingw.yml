@@ -32,6 +32,8 @@ jobs:
           mingw-w64-${{matrix.platform.arch}}-${{matrix.compiler.cc}}
           mingw-w64-${{matrix.platform.arch}}-ninja
           mingw-w64-${{matrix.platform.arch}}-cmake
+          mingw-w64-${{matrix.platform.arch}}-libc++
+          mingw-w64-${{matrix.platform.arch}}-libc++abi
 
     - name: Configure CMake
       env:
