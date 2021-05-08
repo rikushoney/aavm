@@ -21,6 +21,23 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
+# Output compiled binaries and library files to appropriate directories
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Force MSVC builds to use static linking 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+option(AAVM_ENABLE_TESTING "Enable building aavm unit tests" ON)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  # Use libc++ when building with clang
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
+add_subdirectory(third_party)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_definitions(AAVM_CLANG=1 AAVM_GCC=0 AAVM_MSVC=0)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -41,17 +58,6 @@ else()
   add_compile_definitions(AAVM_WINDOWS=0 AAVM_LINUX=0 AAVM_MACOS=0)
 endif()
 
-# Output compiled binaries and library files to appropriate directories
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Force MSVC builds to use static linking 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-option(AAVM_ENABLE_TESTING "Enable building aavm unit tests" ON)
-
-add_subdirectory(third_party)
 add_subdirectory(src)
 
 if(AAVM_ENABLE_TESTING)
