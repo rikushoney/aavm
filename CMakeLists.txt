@@ -33,7 +33,16 @@ option(AAVM_ENABLE_TESTING "Enable building aavm unit tests" ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Use libc++ when building with clang
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  include(CheckCXXSourceRuns)
+  set(CMAKE_REQUIRED_FLAGS "-stdlib=libc++")
+  check_cxx_source_runs("#include <ciso646>
+#ifndef _LIBCPP_VERSION
+#error
+#endif
+int main() { return 0; }" AAVM_HAS_LIBCXX)
+  if(AAVM_HAS_LIBCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  endif()
 endif()
 
 add_subdirectory(third_party)
