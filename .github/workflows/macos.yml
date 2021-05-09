@@ -1,20 +1,38 @@
-name: macos 
+name: macos
 
 on: [push, pull_request]
 
 jobs:
   build:
-    name: ${{matrix.name}} ${{matrix.build-type}}
-    runs-on: ${{matrix.os}} 
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.os}}
     strategy:
       matrix:
         os: [macos-latest]
+        cxx: [gcc, clang, AppleClang]
         build-type: [Debug, Release]
 
     steps:
     - uses: actions/checkout@v2
 
+    - name: Setup GCC
+      if: ${{matrix.cxx == 'gcc'}}
+      run: |
+        echo "CXX=g++-10" >> $GITHUB_ENV
+
+    - name: Setup Clang
+      if: ${{matrix.cxx == 'clang'}}
+      run: |
+        echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+
+    - name: Setup AppleClang
+      if: ${{matrix.cxx == 'AppleClang'}}
+      run: |
+        echo "CXX=clang++" >> $GITHUB_ENV
+
     - name: Configure CMake
+      env:
+        CXX: ${{env.CXX}}
       run: |
         cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
 
