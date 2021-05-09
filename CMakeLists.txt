@@ -26,20 +26,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Force MSVC builds to use static linking 
+# Force MSVC builds to use static linking
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 option(AAVM_ENABLE_TESTING "Enable building aavm unit tests" ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Use libc++ when building with clang
-  include(CheckCXXSourceRuns)
-  set(CMAKE_REQUIRED_FLAGS "-stdlib=libc++")
-  check_cxx_source_runs("#include <ciso646>
-#ifndef _LIBCPP_VERSION
-#error
-#endif
-int main() { return 0; }" AAVM_HAS_LIBCXX)
+  include(DetectLibCXX)
+  detect_libcxx(AAVM_HAS_LIBCXX)
   if(AAVM_HAS_LIBCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   endif()
