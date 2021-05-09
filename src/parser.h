@@ -19,7 +19,7 @@ namespace aavm::parser {
 class Parser {
 public:
   Parser() = delete;
-  Parser(const Charbuffer &source) : lexer_{source} {
+  Parser(Lexer &lexer) : lexer_{lexer} {
     // prime the first token
     lexer_.get_token();
   }
@@ -98,7 +98,7 @@ protected:
   parse_block_memory(ir::Instruction::BlockMemoryOperation op);
 
 private:
-  Lexer lexer_;
+  Lexer &lexer_;
   std::vector<ir::Label> labels_{};
 };
 

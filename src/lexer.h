@@ -32,6 +32,7 @@ class Lexer {
 public:
   Lexer() = delete;
   Lexer(const Charbuffer &text) : text_{text} { get_char(); }
+  virtual ~Lexer() {}
 
   constexpr auto token_kind() const { return current_token_; }
   constexpr auto int_value() const { return int_value_; }
@@ -42,7 +43,7 @@ public:
     return SourceLocation{column_number_, line_number_, cursor_};
   }
 
-  auto get_token() {
+  virtual auto get_token() -> token::Kind {
     if (!token_queue_.empty()) {
       current_token_ = token_queue_.front();
       token_queue_.pop();
@@ -55,7 +56,7 @@ public:
   }
 
 private:
-  int get_char() {
+  auto get_char() -> int {
     if (cursor_ == text_.end()) {
       current_char_ = 0;
     } else {

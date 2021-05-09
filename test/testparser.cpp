@@ -13,7 +13,9 @@ using namespace aavm::textbuffer_literals;
 using namespace std::string_view_literals;
 
 TEST(ParserTest, CanParseArithmeticInstruction) {
-  const auto parsed = Parser{"add r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "add r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Add);
@@ -26,7 +28,9 @@ TEST(ParserTest, CanParseArithmeticInstruction) {
 }
 
 TEST(ParserTest, CanParseShiftInstruction) {
-  const auto parsed = Parser{"asr r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "asr r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MoveInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mov);
@@ -41,7 +45,9 @@ TEST(ParserTest, CanParseShiftInstruction) {
 }
 
 TEST(ParserTest, CanParseMultiplyInstruction) {
-  const auto parsed = Parser{"mul r0, r1, r2"_tb}.parse_instruction();
+  const auto text = "mul r0, r1, r2"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mul);
@@ -53,7 +59,9 @@ TEST(ParserTest, CanParseMultiplyInstruction) {
 }
 
 TEST(ParserTest, CanParseDivideInstruction) {
-  const auto parsed = Parser{"sdiv r0, r1, r2"_tb}.parse_instruction();
+  const auto text = "sdiv r0, r1, r2"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::DivideInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Sdiv);
@@ -65,7 +73,9 @@ TEST(ParserTest, CanParseDivideInstruction) {
 }
 
 TEST(ParserTest, CanParseMoveInstruction) {
-  const auto parsed = Parser{"mov r0, #1"_tb}.parse_instruction();
+  const auto text = "mov r0, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MoveInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mov);
@@ -77,7 +87,9 @@ TEST(ParserTest, CanParseMoveInstruction) {
 }
 
 TEST(ParserTest, CanParseComparisonInstruction) {
-  const auto parsed = Parser{"cmp r0, #1"_tb}.parse_instruction();
+  const auto text = "cmp r0, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ComparisonInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Cmp);
@@ -89,7 +101,9 @@ TEST(ParserTest, CanParseComparisonInstruction) {
 }
 
 TEST(ParserTest, CanParseBitfieldInstruction) {
-  const auto parsed = Parser{"bfc r0, #1, #2"_tb}.parse_instruction();
+  const auto text = "bfc r0, #1, #2"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::BitfieldInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Bfc);
@@ -101,7 +115,9 @@ TEST(ParserTest, CanParseBitfieldInstruction) {
 }
 
 TEST(ParserTest, CanParseReverseInstruction) {
-  const auto parsed = Parser{"rbit r0, r1"_tb}.parse_instruction();
+  const auto text = "rbit r0, r1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ReverseInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Rbit);
@@ -112,7 +128,9 @@ TEST(ParserTest, CanParseReverseInstruction) {
 }
 
 TEST(ParserTest, CanParseBranchInstruction) {
-  const auto parsed = Parser{"b loop"_tb}.parse_instruction();
+  const auto text = "b loop"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::BranchInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::B);
@@ -121,7 +139,9 @@ TEST(ParserTest, CanParseBranchInstruction) {
 }
 
 TEST(ParserTest, CanParseSingleMemoryInstruction) {
-  const auto parsed = Parser{"ldr r0, [r1, #1]"_tb}.parse_instruction();
+  const auto text = "ldr r0, [r1, #1]"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::SingleMemoryInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Ldr);
@@ -137,7 +157,9 @@ TEST(ParserTest, CanParseSingleMemoryInstruction) {
 }
 
 TEST(ParserTest, CanParseBlockMemoryInstruction) {
-  const auto parsed = Parser{"ldm r0, {r1, r2}"_tb}.parse_instruction();
+  const auto text = "ldm r0, {r1, r2}"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::BlockMemoryInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Ldm);
@@ -151,7 +173,9 @@ TEST(ParserTest, CanParseBlockMemoryInstruction) {
 }
 
 TEST(ParserTest, CanParseConditionSuffix) {
-  const auto parsed = Parser{"addeq r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "addeq r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Add);
@@ -160,7 +184,9 @@ TEST(ParserTest, CanParseConditionSuffix) {
 }
 
 TEST(ParserTest, CanParseUpdateFlag) {
-  const auto parsed = Parser{"adds r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "adds r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Add);
@@ -169,7 +195,9 @@ TEST(ParserTest, CanParseUpdateFlag) {
 }
 
 TEST(ParserTest, CanParseUpdateFlagAndConditionSuffix) {
-  const auto parsed = Parser{"addseq r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "addseq r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Add);
@@ -178,7 +206,9 @@ TEST(ParserTest, CanParseUpdateFlagAndConditionSuffix) {
 }
 
 TEST(ParserTest, CanParseOperand2Immediate) {
-  const auto parsed = Parser{"add r0, r1, #1"_tb}.parse_instruction();
+  const auto text = "add r0, r1, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_TRUE(instr.src2().immediate());
@@ -186,7 +216,9 @@ TEST(ParserTest, CanParseOperand2Immediate) {
 }
 
 TEST(ParserTest, CanParseOperand2Register) {
-  const auto parsed = Parser{"add r0, r1, r2"_tb}.parse_instruction();
+  const auto text = "add r0, r1, r2"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_FALSE(instr.src2().immediate());
@@ -197,7 +229,9 @@ TEST(ParserTest, CanParseOperand2Register) {
 }
 
 TEST(ParserTest, CanParseOperand2RegisterImmediateShift) {
-  const auto parsed = Parser{"add r0, r1, r2, ASR #1"_tb}.parse_instruction();
+  const auto text = "add r0, r1, r2, ASR #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_FALSE(instr.src2().immediate());
@@ -208,7 +242,9 @@ TEST(ParserTest, CanParseOperand2RegisterImmediateShift) {
 }
 
 TEST(ParserTest, CanParseOperand2RegisterRegisterShift) {
-  const auto parsed = Parser{"add r0, r1, r2, ASR r3"_tb}.parse_instruction();
+  const auto text = "add r0, r1, r2, ASR r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ArithmeticInstruction>(parsed.get());
   EXPECT_FALSE(instr.src2().immediate());
@@ -219,7 +255,9 @@ TEST(ParserTest, CanParseOperand2RegisterRegisterShift) {
 }
 
 TEST(ParserTest, CanParseMlsInstruction) {
-  const auto parsed = Parser{"mls r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "mls r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
@@ -228,7 +266,9 @@ TEST(ParserTest, CanParseMlsInstruction) {
 }
 
 TEST(ParserTest, CanParseMlsWithConditionInstruction) {
-  const auto parsed = Parser{"mlseq r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "mlseq r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
@@ -237,7 +277,9 @@ TEST(ParserTest, CanParseMlsWithConditionInstruction) {
 }
 
 TEST(ParserTest, CanParseMlsWithUpdatesFlagInstruction) {
-  const auto parsed = Parser{"mlss r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "mlss r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
@@ -246,7 +288,9 @@ TEST(ParserTest, CanParseMlsWithUpdatesFlagInstruction) {
 }
 
 TEST(ParserTest, CanParseMlsWithConditionAndUpdatesFlagInstruction) {
-  const auto parsed = Parser{"mlsseq r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "mlsseq r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Mls);
@@ -255,7 +299,9 @@ TEST(ParserTest, CanParseMlsWithConditionAndUpdatesFlagInstruction) {
 }
 
 TEST(ParserTest, CanParseTeqInstruction) {
-  const auto parsed = Parser{"teq r0, #1"_tb}.parse_instruction();
+  const auto text = "teq r0, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ComparisonInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Teq);
@@ -264,7 +310,9 @@ TEST(ParserTest, CanParseTeqInstruction) {
 }
 
 TEST(ParserTest, CanParseTeqWithConditionInstruction) {
-  const auto parsed = Parser{"teqeq r0, #1"_tb}.parse_instruction();
+  const auto text = "teqeq r0, #1"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::ComparisonInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Teq);
@@ -273,7 +321,9 @@ TEST(ParserTest, CanParseTeqWithConditionInstruction) {
 }
 
 TEST(ParserTest, CanParseMultiplyAccumulateInstruction) {
-  const auto parsed = Parser{"umlal r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "umlal r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Umlal);
@@ -282,7 +332,10 @@ TEST(ParserTest, CanParseMultiplyAccumulateInstruction) {
 }
 
 TEST(ParserTest, CanParseMultiplyAccumulateWithConditionInstruction) {
-  const auto parsed = Parser{"umlalal r0, r1, r2, r3"_tb}.parse_instruction();
+  const auto text = "umlalal r0, r1, r2, r3"_tb;
+  auto lexer = parser::Lexer{text};
+  const auto parsed = Parser{lexer}.parse_instruction();
+  ASSERT_NE(parsed.get(), nullptr);
   ASSERT_NE(parsed.get(), nullptr);
   const auto &instr = *ir::cast<ir::MultiplyInstruction>(parsed.get());
   EXPECT_EQ(instr.operation(), ir::Instruction::Umlal);
