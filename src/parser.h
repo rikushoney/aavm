@@ -32,7 +32,7 @@ private:
   template <typename Pred>
   constexpr auto ensure(Pred &&pred, std::string_view message) {
     if (!pred(lexer_.token_kind())) {
-      fmt::print(message);
+      fmt::print("{}\n", message);
       return false;
     }
 
@@ -48,7 +48,7 @@ private:
   constexpr auto expect(Pred &&pred, std::string_view message) {
     lexer_.get_token();
     if (!pred(lexer_.token_kind())) {
-      fmt::print(message);
+      fmt::print("{}\n", message);
       return false;
     }
 

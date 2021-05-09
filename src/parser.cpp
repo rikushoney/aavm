@@ -11,7 +11,7 @@ using namespace aavm::parser;
 using namespace aavm::ir;
 using namespace std::string_view_literals;
 
-constexpr unsigned map_token(token::Kind token) {
+static constexpr auto map_token(token::Kind token) -> unsigned {
   using namespace aavm::token;
 
   switch (token) {

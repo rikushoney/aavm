@@ -8,7 +8,9 @@
 using namespace aavm;
 using namespace aavm::parser;
 
-constexpr auto is_valid_identifier(int ch) { return is_alnum(ch) || ch == '_'; }
+static constexpr auto is_valid_identifier(int ch) {
+  return is_alnum(ch) || ch == '_';
+}
 
 token::Kind Lexer::lex_integer() {
   auto radix = 10; // assume decimal

@@ -23,9 +23,9 @@ public:
   /* constexpr */ auto cursor() const { return cursor_; }
 
 private:
-  std::size_t column_;
-  std::size_t line_;
-  Charbuffer::iterator cursor_;
+  const std::size_t column_;
+  const std::size_t line_;
+  const Charbuffer::iterator cursor_;
 };
 
 class Lexer {
