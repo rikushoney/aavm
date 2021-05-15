@@ -218,6 +218,8 @@ static constexpr auto map_token(token::Kind token) -> unsigned {
   default:
     return 0;
   }
+
+  aavm_unreachable();
 }
 
 std::unique_ptr<Instruction> Parser::parse_instruction() {
@@ -228,39 +230,45 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
   }
 
   if (tok != token::kw_nop) {
-    const auto operation = map_token(tok);
-    if (operation > 0) {
-      if (Instruction::is_arithmetic_operation(operation)) {
+    const auto op = map_token(tok);
+    if (op > 0) {
+      if (Instruction::is_arithmetic_operation(op)) {
         return parse_arithmetic(
-            static_cast<Instruction::ArithmeticOperation>(operation));
-      } else if (Instruction::is_shift_operation(operation)) {
-        return parse_shift(static_cast<Instruction::ShiftOperation>(operation));
-      } else if (Instruction::is_multiply_operation(operation)) {
-        return parse_multiply(
-            static_cast<Instruction::MultiplyOperation>(operation));
-      } else if (Instruction::is_divide_operation(operation)) {
-        return parse_divide(
-            static_cast<Instruction::DivideOperation>(operation));
-      } else if (Instruction::is_move_operation(operation)) {
-        return parse_move(static_cast<Instruction::MoveOperation>(operation));
-      } else if (Instruction::is_comparison_operation(operation)) {
+            static_cast<Instruction::ArithmeticOperation>(op),
+            lexer_.source_location());
+      } else if (Instruction::is_shift_operation(op)) {
+        return parse_shift(static_cast<Instruction::ShiftOperation>(op),
+                           lexer_.source_location());
+      } else if (Instruction::is_multiply_operation(op)) {
+        return parse_multiply(static_cast<Instruction::MultiplyOperation>(op),
+                              lexer_.source_location());
+      } else if (Instruction::is_divide_operation(op)) {
+        return parse_divide(static_cast<Instruction::DivideOperation>(op),
+                            lexer_.source_location());
+      } else if (Instruction::is_move_operation(op)) {
+        return parse_move(static_cast<Instruction::MoveOperation>(op),
+                          lexer_.source_location());
+      } else if (Instruction::is_comparison_operation(op)) {
         return parse_comparison(
-            static_cast<Instruction::ComparisonOperation>(operation));
-      } else if (Instruction::is_bitfield_operation(operation)) {
-        return parse_bitfield(
-            static_cast<Instruction::BitfieldOperation>(operation));
-      } else if (Instruction::is_reverse_operation(operation)) {
-        return parse_reverse(
-            static_cast<Instruction::ReverseOperation>(operation));
-      } else if (Instruction::is_branch_operation(operation)) {
-        return parse_branch(
-            static_cast<Instruction::BranchOperation>(operation));
-      } else if (Instruction::is_single_memory_operation(operation)) {
+            static_cast<Instruction::ComparisonOperation>(op),
+            lexer_.source_location());
+      } else if (Instruction::is_bitfield_operation(op)) {
+        return parse_bitfield(static_cast<Instruction::BitfieldOperation>(op),
+                              lexer_.source_location());
+      } else if (Instruction::is_reverse_operation(op)) {
+        return parse_reverse(static_cast<Instruction::ReverseOperation>(op),
+                             lexer_.source_location());
+      } else if (Instruction::is_branch_operation(op)) {
+        return parse_branch(static_cast<Instruction::BranchOperation>(op),
+                            lexer_.source_location());
+      } else if (Instruction::is_single_memory_operation(op)) {
         return parse_single_memory(
-            static_cast<Instruction::SingleMemoryOperation>(operation));
-      } else if (Instruction::is_block_memory_operation(operation)) {
+            static_cast<Instruction::SingleMemoryOperation>(op),
+            lexer_.source_location());
+      } else if (Instruction::is_block_memory_operation(op)) {
         return parse_block_memory(
-            static_cast<Instruction::BlockMemoryOperation>(operation));
+            static_cast<Instruction::BlockMemoryOperation>(op),
+            lexer_.source_location());
       } else {
         return {};
       }
@@ -273,7 +281,7 @@ std::unique_ptr<Instruction> Parser::parse_instruction() {
       Operand2{ShiftedRegister{Register::Kind::R0, Instruction::Lsl, 0u}});
 }
 
-const Label *Parser::find_label(std::string_view name) {
+const Label *Parser::find_label_or_insert(std::string_view name) {
   for (const auto &l : labels_) {
     if (name == l.name()) {
       return &l;
@@ -283,7 +291,7 @@ const Label *Parser::find_label(std::string_view name) {
       Label{static_cast<LabelID>(labels_.size() + 1), name});
 }
 
-bool Parser::parse_update_flag() {
+bool Parser::parse_update_flag(const SourceLocation & /*srcloc*/) {
   const auto update = lexer_.token_kind() == token::UpdateFlag;
   if (update) {
     lexer_.get_token();
@@ -292,7 +300,7 @@ bool Parser::parse_update_flag() {
   return update;
 }
 
-Condition::Kind Parser::parse_condition() {
+Condition::Kind Parser::parse_condition(const SourceLocation & /*srcloc*/) {
   if (is_condition(lexer_.token_kind())) {
     const auto cond = map_token(lexer_.token_kind());
     lexer_.get_token();
@@ -302,7 +310,8 @@ Condition::Kind Parser::parse_condition() {
   return Condition::AL;
 }
 
-std::optional<unsigned> Parser::parse_immediate(bool numbersym) {
+std::optional<unsigned>
+Parser::parse_immediate(bool numbersym, const SourceLocation & /*srcloc*/) {
   if (numbersym && !ensure(token::Numbersym, "expected '#'"sv)) {
     return std::nullopt;
   }
@@ -317,8 +326,8 @@ std::optional<unsigned> Parser::parse_immediate(bool numbersym) {
     return std::nullopt;
   }
 
-// we don't really care that the value stays unsigned because at assembly level
-// it is all up to interpretation anyway
+  // we want to compute the two's compliment of the number but keep the value
+  // unsigned since it's up to interpretation at an assembly level anyway
 #if AAVM_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4146)
@@ -329,7 +338,8 @@ std::optional<unsigned> Parser::parse_immediate(bool numbersym) {
 #endif
 }
 
-std::optional<Register::Kind> Parser::parse_register() {
+std::optional<Register::Kind>
+Parser::parse_register(const SourceLocation & /*srcloc*/) {
   const auto reg = map_token(lexer_.token_kind());
   if (!ensure(token::is_register, "expected register"sv)) {
     return std::nullopt;
@@ -338,13 +348,15 @@ std::optional<Register::Kind> Parser::parse_register() {
   return static_cast<Register::Kind>(reg);
 }
 
-std::optional<Operand2> Parser::parse_operand2() {
+std::optional<Operand2>
+Parser::parse_operand2(const SourceLocation & /*srcloc*/) {
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto imm = parse_immediate();
+    const auto imm =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     return imm ? std::optional{Operand2{*imm}} : std::nullopt;
   }
 
-  const auto rm = parse_register();
+  const auto rm = parse_register(lexer_.source_location());
   if (!rm) {
     return std::nullopt;
   }
@@ -364,46 +376,49 @@ std::optional<Operand2> Parser::parse_operand2() {
 
   lexer_.get_token();
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto shamt5 = parse_immediate();
+    const auto shamt5 =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     return shamt5 ? std::optional{Operand2{ShiftedRegister{
                         *rm, static_cast<Instruction::ShiftOperation>(sh),
                         *shamt5}}}
                   : std::nullopt;
   } else {
-    const auto rs = parse_register();
+    const auto rs = parse_register(lexer_.source_location());
     return rs ? std::optional{Operand2{ShiftedRegister{
                     *rm, static_cast<Instruction::ShiftOperation>(sh), *rs}}}
               : std::nullopt;
   }
 }
 
-std::optional<const Label *> Parser::parse_label() {
+std::optional<const Label *>
+Parser::parse_label(const SourceLocation & /*srcloc*/) {
   const auto label = lexer_.string_value();
   if (!ensure(token::Label, "expected label"sv)) {
     return std::nullopt;
   }
-  return find_label(label);
+  return find_label_or_insert(label);
 }
 
 std::unique_ptr<ArithmeticInstruction>
-Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
+Parser::parse_arithmetic(Instruction::ArithmeticOperation op,
+                         const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto updates = parse_update_flag();
-  const auto cond = parse_condition();
+  const auto updates = parse_update_flag(lexer_.source_location());
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
   // special case for ADR
   if (op == Instruction::Adr) {
-    const auto label = parse_label();
+    const auto label = parse_label(lexer_.source_location());
     return label
                ? std::make_unique<ArithmeticInstruction>(op, cond, *rd, *label)
                : nullptr;
   }
-  const auto rn = parse_register();
+  const auto rn = parse_register(lexer_.source_location());
   if (!rn) {
     return nullptr;
   }
@@ -411,24 +426,25 @@ Parser::parse_arithmetic(Instruction::ArithmeticOperation op) {
     return nullptr;
   }
 
-  const auto src2 = parse_operand2();
+  const auto src2 = parse_operand2(lexer_.source_location());
   return src2 ? std::make_unique<ArithmeticInstruction>(op, cond, updates, *rd,
                                                         *rn, *src2)
               : nullptr;
 }
 
 std::unique_ptr<MoveInstruction>
-Parser::parse_shift(Instruction::ShiftOperation op) {
+Parser::parse_shift(Instruction::ShiftOperation op,
+                    const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto updates = parse_update_flag();
-  const auto cond = parse_condition();
+  const auto updates = parse_update_flag(lexer_.source_location());
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
-  const auto rm = parse_register();
+  const auto rm = parse_register(lexer_.source_location());
   if (!rm) {
     return nullptr;
   }
@@ -443,14 +459,15 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
   }
 
   if (lexer_.token_kind() == token::Numbersym) {
-    const auto shamt5 = parse_immediate();
+    const auto shamt5 =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     return shamt5 ? std::make_unique<MoveInstruction>(
                         Instruction::Mov, cond, updates, *rd,
                         Operand2{ShiftedRegister{*rm, op, *shamt5}})
                   : nullptr;
   }
 
-  const auto rs = parse_register();
+  const auto rs = parse_register(lexer_.source_location());
   return rs ? std::make_unique<MoveInstruction>(
                   Instruction::Mov, cond, updates, *rd,
                   Operand2{ShiftedRegister{*rm, op, *rs}})
@@ -458,25 +475,26 @@ Parser::parse_shift(Instruction::ShiftOperation op) {
 }
 
 std::unique_ptr<MultiplyInstruction>
-Parser::parse_multiply(Instruction::MultiplyOperation op) {
+Parser::parse_multiply(Instruction::MultiplyOperation op,
+                       const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto updates = parse_update_flag();
-  const auto cond = parse_condition();
+  const auto updates = parse_update_flag(lexer_.source_location());
+  const auto cond = parse_condition(lexer_.source_location());
 
   switch (op) {
   case Instruction::Mul:
   case Instruction::Mla:
   case Instruction::Mls: {
-    const auto rd = parse_register();
+    const auto rd = parse_register(lexer_.source_location());
     if (!rd || !ensure_comma()) {
       break;
     }
-    const auto rm = parse_register();
+    const auto rm = parse_register(lexer_.source_location());
     if (!rm || !ensure_comma()) {
       break;
     }
-    const auto rs = parse_register();
+    const auto rs = parse_register(lexer_.source_location());
 
     if (op == Instruction::Mul) {
       return rs ? std::make_unique<MultiplyInstruction>(op, cond, updates, *rd,
@@ -487,7 +505,7 @@ Parser::parse_multiply(Instruction::MultiplyOperation op) {
     if (!rs || !ensure_comma()) {
       break;
     }
-    const auto rn = parse_register();
+    const auto rn = parse_register(lexer_.source_location());
     return rn ? std::make_unique<MultiplyInstruction>(op, cond, updates, *rs,
                                                       *rm, *rs, *rn)
               : nullptr;
@@ -496,19 +514,19 @@ Parser::parse_multiply(Instruction::MultiplyOperation op) {
   case Instruction::Smull:
   case Instruction::Umlal:
   case Instruction::Smlal: {
-    const auto rdlo = parse_register();
+    const auto rdlo = parse_register(lexer_.source_location());
     if (!rdlo || !ensure_comma()) {
       break;
     }
-    const auto rdhi = parse_register();
+    const auto rdhi = parse_register(lexer_.source_location());
     if (!rdhi || !ensure_comma()) {
       break;
     }
-    const auto rm = parse_register();
+    const auto rm = parse_register(lexer_.source_location());
     if (!rm || !ensure_comma()) {
       break;
     }
-    const auto rs = parse_register();
+    const auto rs = parse_register(lexer_.source_location());
 
     return rs ? std::make_unique<MultiplyInstruction>(
                     op, cond, updates, std::pair{*rdlo, *rdhi}, *rm, *rs)
@@ -522,53 +540,56 @@ Parser::parse_multiply(Instruction::MultiplyOperation op) {
 }
 
 std::unique_ptr<DivideInstruction>
-Parser::parse_divide(Instruction::DivideOperation op) {
+Parser::parse_divide(Instruction::DivideOperation op,
+                     const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
-  const auto rn = parse_register();
+  const auto rn = parse_register(lexer_.source_location());
   if (!rn || !ensure_comma()) {
     return nullptr;
   }
-  const auto rm = parse_register();
+  const auto rm = parse_register(lexer_.source_location());
 
   return rm ? std::make_unique<DivideInstruction>(op, cond, *rd, *rn, *rm)
             : nullptr;
 }
 
 std::unique_ptr<MoveInstruction>
-Parser::parse_move(Instruction::MoveOperation op) {
+Parser::parse_move(Instruction::MoveOperation op,
+                   const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
   switch (op) {
   case Instruction::Mov:
   case Instruction::Mvn: {
-    const auto updates = parse_update_flag();
-    const auto cond = parse_condition();
+    const auto updates = parse_update_flag(lexer_.source_location());
+    const auto cond = parse_condition(lexer_.source_location());
 
-    const auto rd = parse_register();
+    const auto rd = parse_register(lexer_.source_location());
     if (!rd || !ensure_comma()) {
       break;
     }
-    const auto src2 = parse_operand2();
+    const auto src2 = parse_operand2(lexer_.source_location());
     return src2 ? std::make_unique<MoveInstruction>(op, cond, updates, *rd,
                                                     *src2)
                 : nullptr;
   }
   case Instruction::Movt:
   case Instruction::Movw: {
-    const auto cond = parse_condition();
+    const auto cond = parse_condition(lexer_.source_location());
 
-    const auto rd = parse_register();
+    const auto rd = parse_register(lexer_.source_location());
     if (!rd || !ensure_comma()) {
       break;
     }
-    const auto imm16 = parse_immediate();
+    const auto imm16 =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     return imm16 ? std::make_unique<MoveInstruction>(op, cond, *rd, *imm16)
                  : nullptr;
   }
@@ -580,95 +601,103 @@ Parser::parse_move(Instruction::MoveOperation op) {
 }
 
 std::unique_ptr<ComparisonInstruction>
-Parser::parse_comparison(Instruction::ComparisonOperation op) {
+Parser::parse_comparison(Instruction::ComparisonOperation op,
+                         const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rn = parse_register();
+  const auto rn = parse_register(lexer_.source_location());
   if (!rn || !ensure_comma()) {
     return nullptr;
   }
-  const auto src2 = parse_operand2();
+  const auto src2 = parse_operand2(lexer_.source_location());
   return src2 ? std::make_unique<ComparisonInstruction>(op, cond, *rn, *src2)
               : nullptr;
 }
 
 std::unique_ptr<BitfieldInstruction>
-Parser::parse_bitfield(Instruction::BitfieldOperation op) {
+Parser::parse_bitfield(Instruction::BitfieldOperation op,
+                       const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
 
   if (op == Instruction::Bfc) {
-    const auto lsb = parse_immediate();
+    const auto lsb =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     if (!lsb || !ensure_comma()) {
       return nullptr;
     }
-    const auto width = parse_immediate();
+    const auto width =
+        parse_immediate(/*numbersym*/ true, lexer_.source_location());
     return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *lsb,
                                                          *width)
                  : nullptr;
   }
 
-  const auto rn = parse_register();
+  const auto rn = parse_register(lexer_.source_location());
   if (!rn || !ensure_comma()) {
     return nullptr;
   }
-  const auto lsb = parse_immediate();
+  const auto lsb =
+      parse_immediate(/*numbersym*/ true, lexer_.source_location());
   if (!lsb || !ensure_comma()) {
     return nullptr;
   }
-  const auto width = parse_immediate();
+  const auto width =
+      parse_immediate(/*numbersym*/ true, lexer_.source_location());
   return width ? std::make_unique<BitfieldInstruction>(op, cond, *rd, *rn, *lsb,
                                                        *width)
                : nullptr;
 }
 
 std::unique_ptr<ReverseInstruction>
-Parser::parse_reverse(Instruction::ReverseOperation op) {
+Parser::parse_reverse(Instruction::ReverseOperation op,
+                      const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
-  const auto rm = parse_register();
+  const auto rm = parse_register(lexer_.source_location());
   return rm ? std::make_unique<ReverseInstruction>(op, cond, *rd, *rm)
             : nullptr;
 }
 
 std::unique_ptr<BranchInstruction>
-Parser::parse_branch(Instruction::BranchOperation op) {
+Parser::parse_branch(Instruction::BranchOperation op,
+                     const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
   switch (op) {
   case Instruction::B:
   case Instruction::Bl: {
-    const auto label = parse_label();
+    const auto label = parse_label(lexer_.source_location());
     return label ? std::make_unique<BranchInstruction>(op, cond, *label)
                  : nullptr;
   }
   case Instruction::Bx: {
-    const auto rm = parse_register();
+    const auto rm = parse_register(lexer_.source_location());
     return rm ? std::make_unique<BranchInstruction>(op, cond, *rm) : nullptr;
   }
   case Instruction::Cbz:
   case Instruction::Cbnz: {
-    const auto rn = parse_register();
+    const auto rn = parse_register(lexer_.source_location());
     if (!rn || !ensure_comma()) {
       break;
     }
-    const auto label = parse_label();
+    const auto label = parse_label(lexer_.source_location());
     return label ? std::make_unique<BranchInstruction>(op, cond, *label)
                  : nullptr;
   }
@@ -680,24 +709,26 @@ Parser::parse_branch(Instruction::BranchOperation op) {
 }
 
 std::unique_ptr<SingleMemoryInstruction>
-Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
+Parser::parse_single_memory(Instruction::SingleMemoryOperation op,
+                            const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
-  const auto rd = parse_register();
+  const auto rd = parse_register(lexer_.source_location());
   if (!rd || !ensure_comma()) {
     return nullptr;
   }
 
   if (lexer_.token_kind() == token::Equal) {
     lexer_.get_token();
-    const auto imm32 = parse_immediate(/* numbersym */ false);
+    const auto imm32 =
+        parse_immediate(/* numbersym */ false, lexer_.source_location());
     return imm32 ? std::make_unique<SingleMemoryInstruction>(op, cond, *rd,
                                                              *imm32)
                  : nullptr;
   } else if (lexer_.token_kind() == token::Label) {
-    const auto label = parse_label();
+    const auto label = parse_label(lexer_.source_location());
     return label ? std::make_unique<SingleMemoryInstruction>(op, cond, *rd,
                                                              *label)
                  : nullptr;
@@ -706,7 +737,7 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
   if (!ensure(token::Lbracket, "expected opening bracket"sv)) {
     return nullptr;
   }
-  const auto rn = parse_register();
+  const auto rn = parse_register(lexer_.source_location());
   if (!rn) {
     return nullptr;
   }
@@ -723,7 +754,7 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
     if (subtract) {
       lexer_.get_token();
     }
-    const auto src2 = parse_operand2();
+    const auto src2 = parse_operand2(lexer_.source_location());
     return src2 ? std::make_unique<SingleMemoryInstruction>(
                       op, cond, *rd, *rn, *src2,
                       SingleMemoryInstruction::IndexMode::PostIndex, subtract)
@@ -737,7 +768,7 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
   if (subtract) {
     lexer_.get_token();
   }
-  const auto src2 = parse_operand2();
+  const auto src2 = parse_operand2(lexer_.source_location());
   if (!src2 || !ensure(token::Rbracket, "expected closing bracket"sv)) {
     return nullptr;
   }
@@ -749,10 +780,11 @@ Parser::parse_single_memory(Instruction::SingleMemoryOperation op) {
 }
 
 std::unique_ptr<BlockMemoryInstruction>
-Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
+Parser::parse_block_memory(Instruction::BlockMemoryOperation op,
+                           const SourceLocation & /*srcloc*/) {
   lexer_.get_token();
 
-  const auto cond = parse_condition();
+  const auto cond = parse_condition(lexer_.source_location());
 
   auto rn = std::optional<Register::Kind>{};
   auto writeback = false;
@@ -767,7 +799,7 @@ Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
   case Instruction::Stmib:
   case Instruction::Stmda:
   case Instruction::Stmdb:
-    rn = parse_register();
+    rn = parse_register(lexer_.source_location());
     if (!rn) {
       return nullptr;
     }
@@ -792,13 +824,13 @@ Parser::parse_block_memory(Instruction::BlockMemoryOperation op) {
 
   auto registers = std::vector<Register::Kind>{};
   while (lexer_.token_kind() != token::Rbrace) {
-    const auto reg = parse_register();
+    const auto reg = parse_register(lexer_.source_location());
     if (!reg) {
       return nullptr;
     }
     if (lexer_.token_kind() == token::Minus) {
       lexer_.get_token();
-      const auto reg2 = parse_register();
+      const auto reg2 = parse_register(lexer_.source_location());
       if (!reg2) {
         return nullptr;
       }
